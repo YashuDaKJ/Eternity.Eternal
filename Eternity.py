@@ -323,7 +323,12 @@ async def slots(interaction: discord.Interaction):
 # ==========================================
 @bot.event
 async def on_message(message):
-    if message.author == bot.user:
+    # 1. CRITICAL LOOP FIX: Ignore messages from ALL bots (including FlamingDeath and itself)
+    if message.author.bot:
+        return
+        
+    # 2. ANTI-SPAM FIX: Ignore any message that mentions @everyone or @here
+    if message.mention_everyone:
         return
     
     await bot.process_commands(message)
@@ -375,4 +380,3 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-        
