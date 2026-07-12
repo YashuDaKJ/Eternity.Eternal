@@ -82,8 +82,6 @@ async def get_gemini_response(user_message: str, user_id: int, attachment_data=N
         
                 combined_instruction = f"{SYSTEM_PROMPT}\n\nAdditional Faction Information:\n{faction_data.FACTION_PROMPT}"
         model = genai.GenerativeModel(model_name="gemini-2.5-flash", system_instruction=combined_instruction)
-        
-        
         if attachment_data:
             response = model.generate_content([user_message, attachment_data])
             return response.text
