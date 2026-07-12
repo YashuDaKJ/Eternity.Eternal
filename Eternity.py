@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import google.generativeai as genai
+import faction_data
 from threading import Thread
 from flask import Flask
 import requests
@@ -79,7 +80,9 @@ async def get_gemini_response(user_message: str, user_id: int, attachment_data=N
         if user_id not in conversation_history:
             conversation_history[user_id] = []
         
-        model = genai.GenerativeModel(model_name="gemini-2.5-flash", system_instruction=SYSTEM_PROMPT)
+                combined_instruction = f"{SYSTEM_PROMPT}\n\nAdditional Faction Information:\n{faction_data.FACTION_PROMPT}"
+        model = genai.GenerativeModel(model_name="gemini-2.5-flash", system_instruction=combined_instruction)
+        
         
         if attachment_data:
             response = model.generate_content([user_message, attachment_data])
