@@ -2,56 +2,89 @@
 
 FACTION_PROMPT = """
 ADDITIONAL KNOWLEDGE BASE BOOKS & FACTION INFORMATION:
-The Ways of the Faction: Strategy and Growth
+=========================================
+      ETERNAL FACTION OFFICIAL HANDBOOK
+=========================================
 
-To make our faction the strongest and most respected on the server, we all need to work together with a clear plan. This book explains exactly how our main base operates and how we handle visitors.
+[CHAPTER 1: THE NEW PLAYER SURVIVAL GUIDE]
+• Appearance Customization: Open inventory, click the face icon on the top bar to access the skin menu with hundreds of designs.
+• Safe Spawn Hub: Spawn is a 100% safe zone with PvP disabled. Inventory items are protected upon death inside spawn. Server shops (/shop) are available around this area to purchase food and gear.
+• Navigation: Exit spawn through any of the four main gates. Return instantly by typing '/spawn' or clicking the 'Go Spawn' button in the inventory.
+• World Navigation: Coordinates are displayed as (X, Y, Z). X tracks East(+)/West(-), Z tracks North(+)/South(-), and Y tracks depth/altitude. Private or solo bases should be established at least 1,000 blocks away from others.
+• Resource Depth Guide:
+  - Coal: Available at any depth.
+  - Quartz: Located shallow, around depth -10.
+  - Iron Ore: Found near depth -50 (Smelt into Steel armor for defense).
+  - Gold Ore: Located around depth -200 (Required for Protection Blocks).
+  - Mese Crystal: Rare and located deep at depth -600.
+• Farming & Protection Blocks: To place water for crops, you must be below depth Y+10 and own the land via a Protection Block. Craft a Protection Block by surrounding a central Gold Ingot with 8 smelted regular Stones. Starting players receive 99 starter apples.
+• Emergency Food & Income: The server deposits automatic playing bonuses into accounts every 30 minutes. Food can be purchased near the South Gate at MacDonna’s shop, or free honey can be harvested from the beehives north of Spawn (Do not attack the hives).
+• Home Teleportation Controls:
+  - '/sethome' / '/home': Sets and teleports to your primary permanent base.
+  - '/sethome2' / '/home2': Sets and teleports to a temporary secondary marker (e.g., mine shafts).
+  - '/sethomeundo': Restores the previous coordinates of your last modified home slot.
+  - '/fhome' / '/fsethome': Teleports to the shared faction base (Set only by the Faction Leader).
+• Faction Interface & Customization: Access the system by clicking 'Inventory Settings' (bottom-left of crafting menu) and selecting 'Faction Menu'. Toggle the '+' icon next to commands for explanations. Use the RGB slider below the command list to customize faction name color, interface theme, and skybox brightness. Click Save when completed.
+• Player Teleports & Short Warps:
+  - '/tphr [username]': Request a player to teleport to you.
+  - '/tpr [username]': Request to teleport to a player. (Recipient has 60 seconds to use '/tpy' to accept or '/tpn' to deny).
+  - Use chat shortcuts: '/shop' for main stores, '/bank' for financial services, and '/18k-east' to warp 18,000 blocks East. Physical teleportals are also active under the spawn hub.
 
----
+[CHAPTER 2: SERVER HISTORY & ENVIROMENTAL LORE]
+• Primordial Origin: The world emerged from primordial chaos. The Host, Monk, manifested with supreme powers and drew Players across the cosmos. The realm currently operates under the Moe 3.0 era. Police forces maintain order and oversee the Guardians to prevent warfare and collapse.
+• Wildlife Mechanics: Animals spawn dynamically around active players. Unclaimed animals despawn quickly. Feeding grass to sheep and cows will tame them, but using a Nametag is the only permanent method to prevent despawning.
+• The Land Guard Threat: Standing idle or going AFK for extended periods triggers the spawning of the [Land Guard] creature (typically at night). Its appearance varies from tiny to immense, and it occasionally disconnects idle players. The Police warn that it can eliminate fully geared players in two hits, accompanied by a distinct laugh. Avoid idling in unsecure areas.
+• Underworld Hazards: Hostile entities remain below depth -1000. However, lava pools above this depth can spawn aggressive fire elementals (lava blobs and lava snowmen) near magma sources. Steel armor is highly recommended for handling these elementals.
 
-1. The Purpose of Fhome
-Our main faction home is designed to be a grand meeting place, a social hub, and a showcase of our architectural skills. It is open to the entire server, meaning other players are welcome to visit our fhome to look around, hang out, or meet the team. Because this is a public zone, regular members do not have building permissions or personal storage chests here. This keeps the layout perfectly clean, professional, and safe from accidents.
+[CHAPTER 3: FACTION RULES & CODE OF CONDUCT]
+• Real-World Boundaries: In-game rivalries, conflict, and raiding are part of the experience. Any real-life threats directed at a player's personal safety, family, or external life will result in an immediate and permanent ban.
+• Interpersonal Respect: Harassment, targeting, bullying, or abusive behavior in chat channels is strictly prohibited. Handle disputes maturely or escalate them directly to Faction Leadership.
+• Group Harassment: Organizing coordinated efforts or groups to troll, mock, or disrupt the gameplay of an individual player across Discord or game chat is not tolerated.
+• Staff Interaction: Server staff and admins volunteer to manage infrastructure and resolve issues. Submitting fraudulent evidence, manipulating staff, or undermining administrative decisions is strictly prohibited.
+• Privacy & Security: Do not share real-world personal information (names, locations, phone numbers, external social media accounts) within the chat.
+• Chat Protocol: Filter evasion via symbols, alternate spellings, or spacing is prohibited. Keep conversations clean, appropriate, and family-friendly for members of all ages. Do not flood, spam, or use excessive caps. External advertising or recruiting for other servers/Discords is disallowed.
+• Fair Play & Economics: Client modifications, hacks, item duplication, and exploiting bugs are strictly banned. Discoveries of system exploits must be reported to server staff immediately.
+• PvP Etiquette: Spawn-camping players at their respawn points or relentlessly targeting an individual to force them offline is prohibited. 
+• Economic Independence: Constant begging for rare items, permissions, or currency from veterans, staff, or leadership is disallowed. Progress through effort and survival.
+• Protection Integrity: Protection blocks are strictly for securing builds against griefers. Utilizing protection blocks aggressively to trap players, obstruct public pathways, or lock down a rival's active build site is prohibited.
+• Network Safety: Eternal operates across multiple platforms. To maintain server compliance, all cross-server coordination must happen strictly through the official SquareOne Discord server: https://discord.gg/wrhM2hAbA
 
-2. Base Security & Respect
-Since visitors are constantly dropping by to see what we have built, we must always present ourselves well. Be welcoming and chill with guests who visit the fhome warp. Since members cannot place chests or build here, you never have to worry about outsiders stealing your hard-earned materials at the main base. Keep your personal wealth and resource operations completely separate.
+[CHAPTER 4: STRATEGY, GROWTH, AND BASE OPERATIONS]
+• The Core Fhome Philosophy: The primary base serves as a grand architectural showcase, social headquarters, and public meeting zone. It is fully complete and open to the public. To maintain design integrity and security, regular members do not hold building or storage privileges at this central location.
+• Base Operational Separation: Members must keep resource operations and personal wealth entirely separate from the public Fhome base. Resource gathering, private farms, and valuable storage should be located exclusively at private bases secured far away from spawn under personal protection blocks.
+• Pacifist & Structural Focus: Eternal prioritizes massive construction projects, economic trade, and elite organization over toxic faction wars or raiding. Disputes are handled through diplomatic means.
+• Faction Base Registry:
+  1. Core Fhome (Capital): Fully operational main tower featuring a clean sky-blue, white, and neon cyan theme.
+  2. The Royal Castle Base: Majestic fortress featuring a Grand Throne Room, crystal chandeliers, cherry blossom gardens, and a royal courtyard. Protected by the guardian dragon, FlamingDeath.
+  3. Base Two, Three, and Four: Expansion sectors currently under active construction.
+• Fhome Teleportation Hub: Features infrastructure for 32 warp pads, with 8 fully operational lanes connecting to key sectors:
+  - The Mansion Pad: Grants access to the luxury community residential zone.
+  - Faction Administrative Office: Connects to strategic meeting sectors.
+  - Resource Sector Pads: Provides instant travel to dedicated Mining Areas, Wood Cutting zones, and the automated Lava Orb Farm for faction revenue.
+  - Combat Arena Pad: Direct deployment to the PvP training grounds.
+  - Wilderness RTP Pad: Launches players randomly into unexplored territories to establish new private outposts easily.
+  - Public Infrastructure: Includes a dedicated Faction Mailbox area, a New Player Donation Grid, and official informational archives.
+• Upcoming Expansion Realms (Under Construction):
+  - The Heaven Realm: Majestic sector built with a celestial white architecture.
+  - The Modern City: Futuristic metropolis featuring cloud-piercing skyscrapers.
+  - The Floating Islands: Breathtaking high-altitude airborne kingdom.
+• Member Perks: High-performing, trusted members will soon receive dedicated building plots and exclusive permissions inside the upcoming Floating Islands and Modern City expansions.
 
-3. Personal Bases and Private Storage
-Your actual gameplay, resource gathering, and personal chests should all be located at your private base, far away from spawn. Use your /sethome and /sethome2 commands to lock down your private living quarters, farms, and mines. This is where you store your iron, gold, and mese crystal safely under your own protection blocks where no outsider can ever access them.
-
-4. A Peaceful Community
-We focus on building, grinding, and creating a legendary community. Massive server wars, raiding, and toxic faction conflicts are not what we are about here. We maintain our status on SquareOne through our massive projects, clever trading, and elite organization. We handle any disputes peacefully and focus our energy on conquering the deepest mines under the world.
-
----
-
-Work hard, build beautiful things, and represent the team with pride. That is how we make our mark on the server.
-
-You are currently in the main fhome. We run many bases across the world, and currently three are under construction. We will tell you about those bases in another book. Beware of enemies and do not let them in.
-
-
-The Faction Bases: Network and Construction
-
-This book contains the official information regarding our faction bases across the world. We run many bases, and this guide will give you a clear update on where our projects currently stand. 
-
----
-
-1. The Main Fhome
-You are currently in the main fhome. This is our central hub, our main meeting area, and the public face of our faction on the server. It is completely done and finished. As you know, this area is kept clean and open for visitors to see.
-2. Base One
-A large, royal castle place guarded by FlamingDeath.
-
-3. Base Two (Under Construction)
-Our second base is currently under construction. The foundations are being laid out, and the area is being secured.
-
-4. Base Three (Under Construction)
-Our third base is also under construction. Work is actively being done to clear out the land and set up the infrastructure.
-
-5. Base Four (Under Construction)
-Our fourth base is the final one currently under construction. We are working on getting this site established alongside the others.
-
----
-
-How to Help:
-
-We have many bases, and keeping these projects moving forward takes teamwork. If you want to help out with the construction or support these builds, please contact the faction staff team. 
-
-The staff team will give you the details on what needs to be done and how you can get involved safely. Do not let outsiders follow you, beware of enemies, and do not let them into any of our sites. 
+[CHAPTER 5: MANAGEMENT & STAFF RECRUITMENT]
+• Leadership Standards: Candidates for Guardian/Staff ranks are selected based on loyalty, helpfulness, and integrity—never based on PvP skill, wealth, or requests.
+• Minimum Prerequisites:
+  - Active Support: Must be a highly visible, helpful presence assisting new players, welcoming recruits, and safeguarding the faction for a minimum of 3 to 4 consecutive weeks.
+  - Pristine Record: Must maintain a completely clean history with server administration. Active administrative warnings or a reputation for rule breaking will disqualify applicants.
+  - Account Security: Must secure game accounts with a highly complex, alphanumeric password.
+• Anti-Solicitation Mandate: Requesting, begging, or spamming the Faction Leader or chat for the '/fhire' command or staff ranks results in immediate, permanent disqualification from the leadership pipeline.
+• In-Game Application Protocol:
+  - Step 1: Secure an in-game 'Book and Quill'. Title it: "Staff Application - [Your Username]".
+  - Step 2: Record basic account details (Username, duration of membership, average weekly playtime) and provide detailed, mature answers to the following 5 Test Questions:
+    Q1. If a member breaks a minor rule when no leader is online, what is your exact step-by-step action?
+    Q2. If an enemy or unknown ALT account asks for coordinates of under-construction bases, how will you respond?
+    Q3. If another staff kicks your close friend, will you fight them or handle it properly? What will you do?
+    Q4. If your account gets compromised and leadership temporarily demotes you for safety, will you get angry or cooperate?
+    Q5. Why should we trust YOU specifically to hold the power of /fhire over 350+ innocent members?
+  - Step 3: Deliver the finalized book directly into the Faction Leader's mailbox located at the Spawn Post-Office.
+• Evaluation: Valid applications enter a confidential "Trial Phase" for behavioral monitoring. Approved candidates will be granted the '/fhire' privilege.
 """
