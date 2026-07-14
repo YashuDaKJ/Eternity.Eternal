@@ -1,6 +1,20 @@
-# faction_data.py
+# ==========================================
+# ETERNAL FACTION CORE DATABASE & LINKS (ETERNITY ONLY)
+# ==========================================
 
-FACTION_PROMPT = """
+# 1. Eternity's GitHub Source Link (Where the bot's "brain" code lives)
+ETERNITY_GITHUB = "https://github.com/YashuDaKJ/Eternity.Eternal"
+
+# 2. SquareOne (Headquarters) Connection Details
+SERVER_ADDRESS = "monk.moe"
+SERVER_PORT = "30023"
+
+# 3. Community Discord Links
+SQUAREONE_DISCORD = "https://discord.gg/XXsYQkSxu3"
+ETERNAL_DISCORD = "https://discord.gg/d6qyNVVSf8"
+
+# 4. Global Prompt Integration for Eternity
+FACTION_PROMPT = f"""
 ADDITIONAL KNOWLEDGE BASE BOOKS & FACTION INFORMATION:
 =========================================
       ETERNAL FACTION OFFICIAL HANDBOOK
@@ -47,7 +61,7 @@ ADDITIONAL KNOWLEDGE BASE BOOKS & FACTION INFORMATION:
 • PvP Etiquette: Spawn-camping players at their respawn points or relentlessly targeting an individual to force them offline is prohibited. 
 • Economic Independence: Constant begging for rare items, permissions, or currency from veterans, staff, or leadership is disallowed. Progress through effort and survival.
 • Protection Integrity: Protection blocks are strictly for securing builds against griefers. Utilizing protection blocks aggressively to trap players, obstruct public pathways, or lock down a rival's active build site is prohibited.
-• Network Safety: Eternal operates across multiple platforms. To maintain server compliance, all cross-server coordination must happen strictly through the official SquareOne Discord server: https://discord.gg/wrhM2hAbA
+• Network Safety: Eternal operates across multiple platforms. To maintain server compliance, all cross-server coordination must happen strictly through the official SquareOne Discord server: {SQUAREONE_DISCORD}
 
 [CHAPTER 4: STRATEGY, GROWTH, AND BASE OPERATIONS]
 • The Core Fhome Philosophy: The primary base serves as a grand architectural showcase, social headquarters, and public meeting zone. It is fully complete and open to the public. To maintain design integrity and security, regular members do not hold building or storage privileges at this central location.
@@ -87,4 +101,32 @@ ADDITIONAL KNOWLEDGE BASE BOOKS & FACTION INFORMATION:
     Q5. Why should we trust YOU specifically to hold the power of /fhire over 350+ innocent members?
   - Step 3: Deliver the finalized book directly into the Faction Leader's mailbox located at the Spawn Post-Office.
 • Evaluation: Valid applications enter a confidential "Trial Phase" for behavioral monitoring. Approved candidates will be granted the '/fhire' privilege.
+
+
+TECHNICAL & CONNECTION INFORMATION (Share when asked about links, codes, hosting, or how to join):
+
+- BOT SOURCE CODE / GITHUB EXPLANATION:
+  * Your GitHub Link: {ETERNITY_GITHUB}
+  
+  * How to explain GitHub to normal players: If anyone asks "What is GitHub?", "!source", "code", or where your cosmic brain/source code comes from, explain it simply! 
+  * Say: "GitHub is basically the factory or website where my creator built my cosmic brain (code). Anyone can go there to see how I work, copy my settings, or check my source code!"
+  * Encourage them to visit the link and drop a "Star" ⭐ (like a thumbs-up) on the repository if they love my features!
+
+- HOW TO JOIN SQUAREONE (OUR HEADQUARTERS):
+  Players can join our headquarters on the SquareOne server in Minetest/Lunati using these exact details:
+  * Address/IP: {SERVER_ADDRESS}
+  * Port: {SERVER_PORT}
+
+- SUPPORTED APPS & PLATFORMS (How to play):
+  SquareOne runs on the Minetest / Lunati engine. Players on mobile or PC can reach us using these apps:
+  1. Lunati (Best performance)
+  2. MultiCraft (Fully supports Lunati servers)
+  3. Kawaii Crafting (Compatible with Minetest/Lunati servers)
+  4. Minetest (Official PC/Android client)
+  
+  To connect, players just need to download any of these apps, go to 'Join Game' or 'Multiplayer', add a new server, enter Server Address: {SERVER_ADDRESS} and Port: {SERVER_PORT}, create a username/password, and jump in!
+
+- OFFICIAL DISCORD SERVERS:
+  * ETERNAL Faction Discord Server: {ETERNAL_DISCORD} (Our main home where you can chat with the real, fully-active Eternity bot and our community!)
+  * SquareOne Server Discord: {SQUAREONE_DISCORD} (The official Discord server run by Admin Monk, where our faction is based)
 """
