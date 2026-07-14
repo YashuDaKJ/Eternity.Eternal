@@ -1,7 +1,7 @@
 # ==========================================
 # ETERNAL FACTION CORE DATABASE & LINKS (ETERNITY ONLY)
 # ==========================================
-
+#NEVER put URLs or links inside code blocks (```) or backticks (`). Always send links as normal, plain text so Discord can automatically generate the link preview and image.
 # 1. Eternity's GitHub Source Link (Where the bot's "brain" code lives)
 ETERNITY_GITHUB = "https://github.com/YashuDaKJ/Eternity.Eternal"
 
