@@ -1,4 +1,4 @@
-MIT License
+MIT License (Modified with Personality & Context Restrictions)
 
 Copyright (c) 2026 YashuDaKJ
 
@@ -6,11 +6,39 @@ Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+copies of the Software, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+==============================================================================
+AMENDMENT: PROPRIETARY PERSONALITY, PROMPTS & CONTEXT RESTRICTIONS
+==============================================================================
+Notwithstanding the permissive nature of the MIT License above, the copyright 
+holder (YashuDaKJ) hereby applies the following strict restrictions on specific 
+components of this repository:
+
+1. INTELLECTUAL PROPERTY PROTECTION: The specific system prompts, character 
+   personalities, faction history, rules, handbook datasets, and configuration 
+   files (specifically including, but not limited to, `faction_data.py` and custom 
+   prompt strings inside the bot files) are the exclusive intellectual property 
+   of YashuDaKJ and the "Eternal Faction".
+
+2. PERMITTED USE (EDUCATIONAL): You are permitted to read, analyze, and learn 
+   from the structural codebase, discord.py integration, and logic flow for 
+   personal educational advancement and study.
+
+3. PROHIBITED USE (CLONING & RE-HOSTING): You are STRICTLY PROHIBITED from 
+   copying, duplicating, or re-hosting the exact personality algorithms, 
+   customized lore prompts, and identity profiles of "FlamingDeath" or "Eternity" 
+   for public deployment, commercial use, or implementation within independent 
+   or rival gaming communities. 
+
+Any unauthorized direct cloning or distribution of the "Eternal Faction" identity 
+and dataset will be treated as a violation of copyright and subject to an immediate 
+GitHub DMCA Takedown claim.
+
+==============================================================================
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
