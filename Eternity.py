@@ -81,8 +81,7 @@ class EternityBot(commands.Bot):
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
-            model = genai.GenerativeModel(
-                model_name="gemini-2.5-flash", 
+            model = genai.GenerativeModel('gemini-1.5-flash') 
                 system_instruction=combined_instructions
             )     
             if attachment_data:
