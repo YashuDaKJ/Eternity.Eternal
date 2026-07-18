@@ -81,9 +81,12 @@ class EternityBot(commands.Bot):
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
-            model = genai.GenerativeModel('gemini-1.5-flash') 
+            # FIXED: Corrected indentation and model parameters initialization
+            model = genai.GenerativeModel(
+                model_name='gemini-1.5-flash',
                 system_instruction=combined_instructions
             )     
+            
             if attachment_data:
                 response = model.generate_content([user_message, attachment_data])
                 return response.text
@@ -98,8 +101,11 @@ class EternityBot(commands.Bot):
             
             return assistant_message
         except Exception as e:
-            print(f"Error: {e}")
-            return f"💠 My cosmic core staggered! {str(e)}"
+            print(f"Error captured in Gemini Call: {e}")
+            # SMART ERROR HANDLING: Clean response for quota issues
+            if "429" in str(e) or "quota" in str(e).lower():
+                return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
+            return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
 
     async def setup_hook(self):
         # Load the commands file dynamically
@@ -136,7 +142,7 @@ async def on_message(message):
     await bot.process_commands(message)
     
     # -------------------------------------------------------------
-    # 🌟 NEW FEATURE: AUTOMATIC REACTION TRIGGERS
+    # 🌟 AUTOMATIC REACTION TRIGGERS
     # -------------------------------------------------------------
     content_lower = message.content.lower()
     
@@ -148,7 +154,7 @@ async def on_message(message):
             pass
 
     # -------------------------------------------------------------
-    # 🌟 NEW FEATURE: GIF RECOGNITION & TRIGGER RESPONSES
+    # 🌟 GIF RECOGNITION & TRIGGER RESPONSES
     # -------------------------------------------------------------
     # Check if the incoming message contains a GIF via link or attachment
     is_gif = "tenor.com" in content_lower or "giphy.com" in content_lower
@@ -215,3 +221,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
+    
