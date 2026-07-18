@@ -7,6 +7,7 @@ from threading import Thread
 from flask import Flask
 import requests
 import time
+from knowledge_router import KnowledgeRouter  # Generic Web Scraper Framework
 
 # ==========================================
 # 1. SETUP FLASK SERVER & HEARTBEAT ENGINE
@@ -58,7 +59,10 @@ class EternityBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='?', intents=intents)
         self.SPECIAL_CHANNEL_ID = 1500095634588569600
+        
+        # Access Matrix Controls
         self.ADMIN_IDS = [1477528681709830297]
+        self.MODERATOR_ROLE_ID = 1485660896746541259  # Added Moderator Role Check
         
         # Pull personality layer directly from faction_data module
         self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
@@ -66,16 +70,70 @@ class EternityBot(commands.Bot):
         self.conversation_history = {}
         self.shard_currency = {}  # Faction economy system (Eternity Shards)
         self.explore_cooldowns = {}
+        
+        # Instantiate the generic router framework
+        self.knowledge_base_router = KnowledgeRouter()
+
+    async def detect_routing_intent(self, user_message: str) -> tuple:
+        """
+        Uses an internal lightweight classification check to analyze intent.
+        Returns a tuple: (INTENT_TYPE, SPECIFIC_ARGUMENT)
+        """
+        try:
+            classification_prompt = f"""
+            Analyze the following incoming communication string from a user. Categorize the intent strictly into one of these three route classifications:
+            
+            1. 'EXTERNAL_DOCS:[slug]' - If the user is requesting or asking about server specifications, global rules, staff designations, server maps, community updates, mining parameters, economic settings, or system configuration documentation. Pick the most applicable short path/slug (e.g., 'rules', 'staff', 'economy', 'maps', 'updates').
+            2. 'GAME_WIKI' - If the user is inquiring about specific game mechanics, technical block placements, engine crafting recipes, or item characteristics.
+            3. 'GENERAL' - For regular chitchat, processing contextual conversation flow, roleplay alignment, or basic conversational messaging.
+
+            Respond with ONLY the classification tag. If it is EXTERNAL_DOCS, append the slug using a colon.
+            Examples:
+            "what are the core server rules here?" -> EXTERNAL_DOCS:rules
+            "how do I craft an iron axe?" -> GAME_WIKI
+            "hello bot how are you doing today" -> GENERAL
+
+            User Input: "{user_message}"
+            """
+            
+            classifier_model = genai.GenerativeModel("gemini-1.5-flash")
+            raw_classification = classifier_model.generate_content(classification_prompt).text.strip().upper()
+            
+            if "EXTERNAL_DOCS" in raw_classification:
+                parts = raw_classification.split(":")
+                slug = parts[1].strip().lower() if len(parts) > 1 else "rules"
+                return ("EXTERNAL_DOCS", slug)
+            elif "GAME_WIKI" in raw_classification:
+                return ("GAME_WIKI", None)
+            
+            return ("GENERAL", None)
+        except Exception as e:
+            print(f"[Routing System Warning] Framework intent fallback: {e}")
+            return ("GENERAL", None)
 
     async def get_gemini_response(self, user_message: str, user_id: int, attachment_data=None) -> str:
         try:
             if user_id not in self.conversation_history:
                 self.conversation_history[user_id] = []
 
-            # Clean and merge System Instructions and Handbook Knowledge Base books
+            # Step 1: Execute Autonomous Routing Decision
+            intent, context_arg = await self.detect_routing_intent(user_message)
+            dynamic_context_injection = ""
+
+            if intent == "EXTERNAL_DOCS" and context_arg:
+                scraped_data = self.knowledge_base_router.fetch_document_node(context_arg)
+                if scraped_data:
+                    dynamic_context_injection = f"\n\n[CRITICAL EXTERNAL LIVE DATABASE UPDATE - Node: {context_arg.upper()}]:\n{scraped_data}"
+            
+            elif intent == "GAME_WIKI":
+                wiki_link = self.knowledge_base_router.generate_wiki_reference(user_message)
+                dynamic_context_injection = f"\n\n[SYSTEM NOTIFICATION]: Direct the user to reference the official game matrix library at: {wiki_link}"
+
+            # Step 2: Assemble System Prompt and Injected Context
             combined_instructions = (
                 f"{self.SYSTEM_PROMPT}\n\n"
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
+                f"{dynamic_context_injection}"
             )
 
             model = genai.GenerativeModel(
@@ -180,3 +238,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
+    
