@@ -4,34 +4,38 @@
   
 # 🌌 Eternity | Eternal Faction Guardian Bot
 
-Welcome to the official repository of **Eternity**, the joyful and sharp-witted cosmic guardian of the **Eternal** faction! Built with Python, Discord.py, and powered by Gemini 2.5 Flash.
+Welcome to the official repository of **Eternity**, the sharp-witted cosmic guardian and security core of the **Eternal** faction! Built with Python and Discord.py, and powered by Gemini 2.5 Flash to maintain absolute order and server safety.
 
 ---
 
 ## 💠 Core Features
-* **AI Chat Integration:** Advanced situational conversation customized for the ETERNAL faction network.
-* **Quantum Economy & RPG:** Members can go on expeditions, earn Eternity Shards, and play cosmic mini-games.
-* **Cosmic Vision:** Advanced multimedia analysis capable of scanning images, video, and audio assets.
-* **24/7 Infrastructure:** Equipped with an internal auto-heartbeat engine to maintain continuous security deployment.
+* **AI Chat Integration:** Advanced situational conversation customized for the Eternal faction network to assist and manage members.
+* **Dual-Command Security:** Fully optimized to process both modern Slash (`/`) commands and classic Prefix (`?`) commands seamlessly.
+* **Cosmic Vision (Media Scan):** Advanced multimedia analysis capable of scanning uploaded images, video, and audio assets for security verification.
+* **Faction Protection & Monitoring:** Automated systems to filter content, manage configurations, and track server operations.
+* **24/7 Infrastructure:** Equipped with an internal auto-heartbeat engine to maintain continuous security deployment on Render.
 
 ---
 
 ## ⚔️ Available Commands
 
-### 🌌 General & AI
-* `?ping` - Check Eternity's quantum latency speed.
-* `/help` - Open the interactive command center framework dropdown.
-* `/ask <question>` - Consult the guardian's intellect from anywhere in the matrix.
-* `/analyze <prompt> <file>` - Scan multimedia files using Cosmic Vision.
+The bot perfectly supports both **Prefix (`?`)** and **Slash (`/`)** command formats.
 
-### 🛡️ Faction RPG & Economy
-* `/profile` - View your Eternal faction registry card and Shard balance.
-* `/explore` - Deploy on tactical patrols to gather Eternity Shards (1-hour cooldown).
-* `/coinflip <choice> <bet>` - Risk your shards on cosmic alignments.
-* `/slots` - Spin the Quantum Slot Machine (Cost: 10 Shards).
+### 🌌 General & AI Assistance
+* `/help` or `?help` - Open the interactive command center framework dropdown.
+* `/ping` or `?ping` - Check Eternity's quantum latency speed.
+* `/ask <question>` or `?ask <question>` - Consult the guardian's intellect for faction queries.
+* `/analyze <prompt> <file>` - Scan and verify multimedia files using Cosmic Vision.
+
+### 🛡️ Faction Moderation & Security
+* `/warn <user> <reason>` or `?warn` - Issue an official security warning to a user.
+* `/kick <user> <reason>` - Remove an unauthorized or disruptive user from the sector.
+* `/ban <user> <reason>` - Permanently blacklist a malicious user from the faction network.
+* `/purge <amount>` - Instantly clear text clutter and malicious logs from the channel.
 
 ### 👑 High Rank Executive (Admin Only)
-* `/behave <script>` - Broadcast execution scripts directly through Eternity's frequency matrix.
+* `/behave <script>` or `?behave <script>` - Broadcast urgent execution scripts directly through Eternity's frequency matrix.
 
 ---
-Guarding the ETERNAL faction since 2025. Undefeated & Massive! 🔥
+Guarding the Eternal faction since 2025. Undefeated & Massive! 🔥
+
