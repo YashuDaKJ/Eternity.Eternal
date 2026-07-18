@@ -136,6 +136,36 @@ async def on_message(message):
     
     await bot.process_commands(message)
     
+    # -------------------------------------------------------------
+    # 🌟 NEW FEATURE: AUTOMATIC REACTION TRIGGERS
+    # -------------------------------------------------------------
+    content_lower = message.content.lower()
+    
+    # Keyword reaction example
+    if "eternal" in content_lower or "victory" in content_lower:
+        try:
+            await message.add_reaction("💠")  # Standard cosmic blue diamond emoji
+        except:
+            pass
+
+    # -------------------------------------------------------------
+    # 🌟 NEW FEATURE: GIF RECOGNITION & TRIGGER RESPONSES
+    # -------------------------------------------------------------
+    # Check if the incoming message contains a GIF via link or attachment
+    is_gif = "tenor.com" in content_lower or "giphy.com" in content_lower
+    if not is_gif and message.attachments:
+        is_gif = any(att.filename.lower().endswith('.gif') for att in message.attachments)
+        
+    if is_gif:
+        print(f"🌌 [GIF Detected] in channel {message.channel.id} by {message.author}")
+
+    # Send a specific cosmic GIF when a target phrase is parsed
+    if content_lower == "protect the faction" or content_lower == "?cosmicgif":
+        cosmic_gif_url = "https://tenor.com/view/nebula-galaxy-space-cosmic-universe-gif-22445853"
+        await message.channel.send(cosmic_gif_url)
+        return  # Stops execution here so it doesn't trigger the AI system simultaneously
+    # -------------------------------------------------------------
+    
     is_pinged_or_replied = bot.user.mentioned_in(message)
     if not is_pinged_or_replied and message.reference:
         try:
@@ -145,14 +175,17 @@ async def on_message(message):
         except:
             pass
 
-    name_called = "eternity" in message.content.lower()
+    name_called = "eternity" in content_lower
     should_reply = (message.channel.id == bot.SPECIAL_CHANNEL_ID) or is_pinged_or_replied or name_called
 
     if should_reply:
         async with message.channel.typing():
             clean_message = message.content.replace(f'<@{bot.user.id}>', '').replace(f'<@!{bot.user.id}>', '').strip()
             
-            if not clean_message and message.attachments:
+            # Sync text context if the user sends a raw GIF attachment/link without typing words
+            if not clean_message and is_gif:
+                clean_message = "Scan this GIF asset I sent you!"
+            elif not clean_message and message.attachments:
                 clean_message = "Scan this asset!"
             
             if clean_message:
@@ -183,4 +216,3 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-        
