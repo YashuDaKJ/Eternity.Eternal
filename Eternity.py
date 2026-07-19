@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands
 import google.generativeai as genai
-import core_data as faction_data  # Linked perfectly with your new file name!
+import core_data as faction_data  # Linked perfectly with your data module!
 from threading import Thread
 from flask import Flask
 import requests
@@ -69,7 +69,7 @@ class EternityBot(commands.Bot):
         self.conversation_history = {}
         self.shard_currency = {}  # Faction economy system (Eternity Shards)
         self.explore_cooldowns = {}
-        # ⏱️ Chat cooldown track karne ke liye dictionary setup ki
+        # ⏱️ Set up dictionary to track chat rate limits and cooldowns
         self.chat_cooldowns = {}
 
     async def get_gemini_response(self, user_message: str, user_id: int, attachment_data=None) -> str:
@@ -92,15 +92,15 @@ class EternityBot(commands.Bot):
                 response = model.generate_content([user_message, attachment_data])
                 return response.text
                 
+            # 📈 OPTIMIZATION FIXED: Truncate BEFORE sending to the API call to keep context lean and clean!
+            if len(self.conversation_history[user_id]) > 15:
+                self.conversation_history[user_id] = self.conversation_history[user_id][-15:]
+
             self.conversation_history[user_id].append({"role": "user", "parts": [user_message]})
             response = model.generate_content(self.conversation_history[user_id])
             assistant_message = response.text
             
             self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
-            
-            # 📈 OPTIMIZATION: History limit 40 se 15 kar di taaki tokens save hon!
-            if len(self.conversation_history[user_id]) > 15:
-                self.conversation_history[user_id] = self.conversation_history[user_id][-15:]
             
             return assistant_message
         except Exception as e:
@@ -136,18 +136,19 @@ async def ping(ctx):
 
 @bot.event
 async def on_message(message):
-    if message.author.bot:
-        return
-    if message.mention_everyone:
+    if message.author.bot or message.mention_everyone:
         return
     
-    await bot.process_commands(message)
+    # 🛡️ ARCHITECTURAL INTERCEPT FIXED: If message starts with a command prefix, execute and exit cleanly!
+    if message.content.startswith(bot.command_prefix):
+        await bot.process_commands(message)
+        return
+    
+    content_lower = message.content.lower()
     
     # -------------------------------------------------------------
     # 🌟 AUTOMATIC REACTION TRIGGERS
     # -------------------------------------------------------------
-    content_lower = message.content.lower()
-    
     if "eternal" in content_lower or "victory" in content_lower:
         try:
             await message.add_reaction("💠")
@@ -189,16 +190,16 @@ async def on_message(message):
         user_id = message.author.id
         if user_id in bot.chat_cooldowns:
             elapsed = current_time - bot.chat_cooldowns[user_id]
-            if elapsed < 5:  # Agar 5 second se kam time hua hai
+            if elapsed < 5:  # Trigger if less than 5 seconds have elapsed
                 remaining = int(5 - elapsed)
                 try:
-                    # Message 3 second baad auto delete ho jayega system ko clean rakhne ke liye
+                    # Message auto-deletes after 3 seconds to preserve chat cleanliness
                     await message.reply(f"⏰ *Hold your energy, guardian! The cosmic core is cooling down. Wait {remaining}s.*", delete_after=3)
                 except:
                     pass
                 return
         
-        # Cooldown timer update karo
+        # Update the active user cooldown timestamp
         bot.chat_cooldowns[user_id] = current_time
 
         async with message.channel.typing():
@@ -237,4 +238,3 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-            
