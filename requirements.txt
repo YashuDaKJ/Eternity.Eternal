@@ -10,3 +10,4 @@ uvloop
 aiodns
 faust-cchardet
 pymongo[srv]
+motor
