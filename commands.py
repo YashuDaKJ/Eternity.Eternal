@@ -4,7 +4,7 @@ from discord import app_commands
 import google.generativeai as genai
 import requests
 from datetime import timedelta
-import faction_data  # Imported to give /ask the full knowledge matrix
+import core_data as faction_data  # Updated: Perfectly linked to the new secure config!
 
 class EternityCommands(commands.Cog):
     def __init__(self, bot):
@@ -239,4 +239,4 @@ class EternityCommands(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(EternityCommands(bot))
-            
+        
