@@ -218,5 +218,5 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Private Files to Hide
-faction_data.py
-faction_data
+core_data.py
+
