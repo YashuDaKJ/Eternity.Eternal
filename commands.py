@@ -337,4 +337,17 @@ class EternityCommands(commands.Cog):
             embed.add_field(name="Target User", value=user.name, inline=True)
             embed.add_field(name="Status Matrix", value="Restored", inline=True)
             embed.add_field(name="Reason Logged", value=reason, inline=False)
-            await interaction.response.send_mes
+            
+            # 🔥 REPAIRED LINE: Cleanly closed the response method call
+            await interaction.response.send_message(embed=embed)
+        except discord.NotFound:
+            await interaction.response.send_message("❌ Execution Error: The specified user ID matrix could not be resolved on the Discord API grid.", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Systems Error: Unban protocol failed. Details: {str(e)}", ephemeral=True)
+
+# ==========================================
+# EXTENSION INITIALIZATION MATRIX
+# ==========================================
+async def setup(bot):
+    await bot.add_cog(EternityCommands(bot))
+        
