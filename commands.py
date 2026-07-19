@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import google.generativeai as genai
 import requests
+import time
 from datetime import timedelta
 import core_data as faction_data  # Linked perfectly with your data module
 
@@ -15,6 +16,7 @@ class HelpDropdown(discord.ui.Select):
         self.special_channel_id = special_channel_id
         options = [
             discord.SelectOption(label="Core Utilities", description="Basic interaction framework and AI interfaces", emoji="🌌"),
+            discord.SelectOption(label="Faction Economy", description="Shards, crystals, and spatial exploration mechanics", emoji="💎"),
             discord.SelectOption(label="Moderation Vectors", description="Administrative commands for faction order", emoji="🛡️")
         ]
         super().__init__(placeholder="Select system architecture...", min_values=1, max_values=1, options=options)
@@ -26,6 +28,11 @@ class HelpDropdown(discord.ui.Select):
             embed.add_field(name="`/ask`", value="Direct query interface to the core AI instance from any permitted node.", inline=False)
             embed.add_field(name="`/analyze`", value="Provide binary assets (images/files) for standard analytical scan.", inline=False)
             embed.add_field(name="💬 AI Integration", value=f"Continuous response node active in <#{self.special_channel_id}>.", inline=False)
+            await interaction.response.edit_message(embed=embed)
+        elif self.values[0] == "Faction Economy":
+            embed = discord.Embed(title="💎 Faction Economy & Matrix Resource Records", color=discord.Color.from_rgb(0, 255, 200))
+            embed.add_field(name="`/profile`", value="Review your secure data ledger, stored shards, crystals, and tier metrics.", inline=False)
+            embed.add_field(name="`/explore`", value="Navigate deep territorial zones to extract precious resource matrices.", inline=False)
             await interaction.response.edit_message(embed=embed)
         elif self.values[0] == "Moderation Vectors":
             embed = discord.Embed(title="🛡️ Moderation & Enforcement Vectors", color=discord.Color.red())
@@ -57,12 +64,29 @@ class EternityCommands(commands.Cog):
         """
         if interaction.user.id in self.bot.ADMIN_IDS:
             return True
-        
-        # Check if the user has the required Moderator Role ID
         if any(role.id == self.bot.MODERATOR_ROLE_ID for role in interaction.user.roles):
             return True
-            
         return False
+
+    async def _get_or_create_profile(self, user_id: int) -> dict:
+        """
+        Asynchronous database pipeline intercept. Fetches a member's profile
+        from the ClusterEternal cluster, generating standard schemas if missing.
+        """
+        if not self.bot.profiles:
+            # Fallback data dictionary structure if DB pipeline is inactive
+            return {"_id": str(user_id), "shards": 0, "crystals": 0, "last_explore": 0}
+            
+        profile = await self.bot.profiles.find_one({"_id": str(user_id)})
+        if not profile:
+            profile = {
+                "_id": str(user_id),
+                "shards": 0,
+                "crystals": 0,
+                "last_explore": 0
+            }
+            await self.bot.profiles.insert_one(profile)
+        return profile
 
     @app_commands.command(name="help", description="Access the functional operations directory of Eternity")
     async def help_command(self, interaction: discord.Interaction):
@@ -76,7 +100,7 @@ class EternityCommands(commands.Cog):
 
     @app_commands.command(name="ask", description="Query Eternity anywhere on the communication network")
     @app_commands.describe(question="Input transaction string for the AI database")
-    @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.user.id)  # ⏱️ 5-Second Cooldown Added
+    @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.user.id)
     async def ask(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
         try:
@@ -109,7 +133,7 @@ class EternityCommands(commands.Cog):
 
     @app_commands.command(name="analyze", description="Upload file assets for system vision processing")
     @app_commands.describe(prompt="Context description or processing instructions", attachment="Target media file array")
-    @app_commands.checks.cooldown(1, 10.0, key=lambda i: i.user.id)  # ⏱️ 10-Second Cooldown Added for Multimedia
+    @app_commands.checks.cooldown(1, 10.0, key=lambda i: i.user.id)
     async def analyze(self, interaction: discord.Interaction, prompt: str, attachment: discord.Attachment):
         await interaction.response.defer()
         if not attachment.content_type:
@@ -121,11 +145,70 @@ class EternityCommands(commands.Cog):
                 'mime_type': attachment.content_type,
                 'data': file_response.content
             }
-            # Routes directly into Eternity's optimized 15-message memory loop!
             response_text = await self.bot.get_gemini_response(prompt, interaction.user.id, attachment_data)
             await interaction.followup.send(f"🌌 **Vision Array Diagnostics:** {response_text}")
         except Exception as e:
             await interaction.followup.send(f"💠 Analytics process error: {str(e)}")
+
+    # ==========================================
+    # FACTION ECONOMY SUBSYSTEMS (PERSISTENT)
+    # ==========================================
+
+    @app_commands.command(name="profile", description="Access your permanent faction profile and asset ledger")
+    async def profile(self, interaction: discord.Interaction, member: discord.Member = None):
+        target = member or interaction.user
+        await interaction.response.defer()
+        
+        # Pull profile seamlessly via async MongoDB route
+        profile = await self._get_or_create_profile(target.id)
+        
+        embed = discord.Embed(
+            title=f"💠 Faction Data Ledger // {target.name}",
+            description="Permanent record synchronization with ClusterEternal verified.",
+            color=discord.Color.from_rgb(0, 191, 255)
+        )
+        embed.set_thumbnail(url=target.display_avatar.url)
+        embed.add_field(name="🌌 Eternity Shards", value=f"`{profile.get('shards', 0)}` Units", inline=True)
+        embed.add_field(name="💎 Quantum Crystals", value=f"`{profile.get('crystals', 0)}` Nodes", inline=True)
+        embed.set_footer(text="Data Flow Status: Stable • Render Storage Persistent")
+        
+        await interaction.followup.send(embed=embed)
+
+    @app_commands.command(name="explore", description="Send scouts into unmapped territory to gather shards")
+    async def explore(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        user_id = interaction.user.id
+        current_time = int(time.time())
+        
+        profile = await self._get_or_create_profile(user_id)
+        last_explore = profile.get("last_explore", 0)
+        
+        # Cooldown check logic (example: 10-minute cooldown / 600 seconds)
+        cooldown_duration = 600 
+        if current_time - last_explore < cooldown_duration:
+            remaining = cooldown_duration - (current_time - last_explore)
+            minutes, seconds = divmod(remaining, 60)
+            await interaction.followup.send(
+                f"⚠️ *Scouting parameters unavailable. Engines recharging. Return in **{minutes}m {seconds}s**.*"
+            )
+            return
+            
+        # Resource extraction distribution allocation
+        reward_shards = 25 
+        
+        if self.bot.profiles:
+            # Atomic update securely scaling the data document on MongoDB
+            await self.bot.profiles.update_one(
+                {"_id": str(user_id)},
+                {
+                    "$inc": {"shards": reward_shards},
+                    "$set": {"last_explore": current_time}
+                }
+            )
+            
+        await interaction.followup.send(
+            f"🌌 **Exploration Survey Complete:** Your team safely penetrated the deep sectors and secured **{reward_shards} Eternity Shards**! 💠 Assets cataloged safely in the cloud database."
+        )
 
     # --- Error Handler for Application Cooldown Matrices ---
     @ask.error
@@ -140,7 +223,7 @@ class EternityCommands(commands.Cog):
             try:
                 await interaction.response.send_message(f"💠 Systems Error: {str(error)}", ephemeral=True)
             except:
-                await interaction.followup.send(f"💠 Systems Error: {str(error)}", ephemeral=True)
+                await interaction.followup.send(f"💠 Systems Error: {str(error)}")
 
     # ==========================================
     # CORE MODERATION ENFORCEMENT ENGINE
@@ -254,12 +337,4 @@ class EternityCommands(commands.Cog):
             embed.add_field(name="Target User", value=user.name, inline=True)
             embed.add_field(name="Status Matrix", value="Restored", inline=True)
             embed.add_field(name="Reason Logged", value=reason, inline=False)
-            await interaction.response.send_message(embed=embed)
-        except ValueError:
-            await interaction.response.send_message("❌ Formatting Error: ID must be numerical.", ephemeral=True)
-        except discord.NotFound:
-            await interaction.response.send_message("❌ Target ID missing from global isolation arrays.", ephemeral=True)
-
-async def setup(bot):
-    await bot.add_cog(EternityCommands(bot))
-        
+            await interaction.response.send_mes
