@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands
 import google.generativeai as genai
-import faction_data  # Import all database prompts & links dynamically
+import core_data as faction_data  # Linked perfectly with your new file name!
 from threading import Thread
 from flask import Flask
 import requests
@@ -63,7 +63,7 @@ class EternityBot(commands.Bot):
         self.ADMIN_IDS = [1477528681709830297]
         self.MODERATOR_ROLE_ID = 1485660896746541259
         
-        # Pull personality layer directly from faction_data module
+        # Pull personality layer directly from core_data module
         self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
         
         self.conversation_history = {}
@@ -81,7 +81,7 @@ class EternityBot(commands.Bot):
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
-            # FIXED: Switched model to gemini-2.5-flash-lite for higher RPM and daily quotas!
+            # USING: gemini-2.5-flash-lite for higher RPM and stable quotas!
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash-lite',
                 system_instruction=combined_instructions
@@ -146,10 +146,9 @@ async def on_message(message):
     # -------------------------------------------------------------
     content_lower = message.content.lower()
     
-    # Keyword reaction example
     if "eternal" in content_lower or "victory" in content_lower:
         try:
-            await message.add_reaction("💠")  # Standard cosmic blue diamond emoji
+            await message.add_reaction("💠")
         except:
             pass
 
@@ -218,4 +217,3 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-    
