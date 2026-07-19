@@ -4,7 +4,7 @@ from discord import app_commands
 import google.generativeai as genai
 import requests
 from datetime import timedelta
-import core_data as faction_data  # Updated: Perfectly linked to the new secure config!
+import core_data as faction_data  # Linked perfectly with your new secure config!
 
 class EternityCommands(commands.Cog):
     def __init__(self, bot):
@@ -69,16 +69,15 @@ class EternityCommands(commands.Cog):
 
     @app_commands.command(name="ask", description="Query Eternity anywhere on the communication network")
     @app_commands.describe(question="Input transaction string for the AI database")
+    @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.user.id)  # ⏱️ 5-Second Cooldown Added
     async def ask(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
         try:
-            # Combined faction prompts so /ask is smart
             combined_instructions = (
                 f"{self.bot.SYSTEM_PROMPT}\n\n"
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
             
-            # FIXED: Switched model name to 'gemini-2.5-flash' to match the main file and prevent 404/Quota limits!
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash', 
                 system_instruction=combined_instructions
@@ -103,6 +102,7 @@ class EternityCommands(commands.Cog):
 
     @app_commands.command(name="analyze", description="Upload file assets for system vision processing")
     @app_commands.describe(prompt="Context description or processing instructions", attachment="Target media file array")
+    @app_commands.checks.cooldown(1, 10.0, key=lambda i: i.user.id)  # ⏱️ 10-Second Cooldown Added for Multimedia
     async def analyze(self, interaction: discord.Interaction, prompt: str, attachment: discord.Attachment):
         await interaction.response.defer()
         if not attachment.content_type:
@@ -114,10 +114,26 @@ class EternityCommands(commands.Cog):
                 'mime_type': attachment.content_type,
                 'data': file_response.content
             }
+            # Routes directly into Eternity's optimized 15-message memory loop!
             response_text = await self.bot.get_gemini_response(prompt, interaction.user.id, attachment_data)
             await interaction.followup.send(f"🌌 **Vision Array Diagnostics:** {response_text}")
         except Exception as e:
             await interaction.followup.send(f"💠 Analytics process error: {str(e)}")
+
+    # --- Error Handler for Application Cooldown Matrices ---
+    @ask.error
+    @analyze.error
+    async def command_cooldown_error_handler(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message(
+                f"⏰ *Hold your energy, guardian! This command matrix is cooling down. Try again in {error.retry_after:.1f}s.*", 
+                ephemeral=True
+            )
+        else:
+            try:
+                await interaction.response.send_message(f"💠 Systems Error: {str(error)}", ephemeral=True)
+            except:
+                await interaction.followup.send(f"💠 Systems Error: {str(error)}", ephemeral=True)
 
     # ==========================================
     # CORE MODERATION ENFORCEMENT ENGINE
@@ -227,7 +243,8 @@ class EternityCommands(commands.Cog):
         try:
             user = await self.bot.fetch_user(int(user_id))
             await interaction.guild.unban(user, reason=reason)
-            embed = discord.Embed(title="🔓 Element Clearance Restored", color=green())
+            # FIXED: Changed color from invalid green() to proper discord.Color.green()
+            embed = discord.Embed(title="🔓 Element Clearance Restored", color=discord.Color.green())
             embed.add_field(name="Target User", value=user.name, inline=True)
             embed.add_field(name="Status Matrix", value="Restored", inline=True)
             embed.add_field(name="Reason Logged", value=reason, inline=False)
