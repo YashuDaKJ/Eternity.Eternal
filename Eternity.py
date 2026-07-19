@@ -69,6 +69,8 @@ class EternityBot(commands.Bot):
         self.conversation_history = {}
         self.shard_currency = {}  # Faction economy system (Eternity Shards)
         self.explore_cooldowns = {}
+        # ⏱️ Chat cooldown track karne ke liye dictionary setup ki
+        self.chat_cooldowns = {}
 
     async def get_gemini_response(self, user_message: str, user_id: int, attachment_data=None) -> str:
         try:
@@ -81,7 +83,6 @@ class EternityBot(commands.Bot):
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
-            # FIXED: Model name changed to fix 404 error and handle requests stably!
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash',
                 system_instruction=combined_instructions
@@ -96,13 +97,14 @@ class EternityBot(commands.Bot):
             assistant_message = response.text
             
             self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
-            if len(self.conversation_history[user_id]) > 40:
-                self.conversation_history[user_id] = self.conversation_history[user_id][-40:]
+            
+            # 📈 OPTIMIZATION: History limit 40 se 15 kar di taaki tokens save hon!
+            if len(self.conversation_history[user_id]) > 15:
+                self.conversation_history[user_id] = self.conversation_history[user_id][-15:]
             
             return assistant_message
         except Exception as e:
             print(f"Error captured in Gemini Call: {e}")
-            # SMART ERROR HANDLING: Clean response for quota or missing model issues
             if "429" in str(e) or "quota" in str(e).lower():
                 return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
             return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
@@ -181,6 +183,24 @@ async def on_message(message):
     should_reply = (message.channel.id == bot.SPECIAL_CHANNEL_ID) or is_pinged_or_replied or name_called
 
     if should_reply:
+        
+        # ⏱️ IMPLEMENTATION: 5-Second Cooldown Check
+        current_time = time.time()
+        user_id = message.author.id
+        if user_id in bot.chat_cooldowns:
+            elapsed = current_time - bot.chat_cooldowns[user_id]
+            if elapsed < 5:  # Agar 5 second se kam time hua hai
+                remaining = int(5 - elapsed)
+                try:
+                    # Message 3 second baad auto delete ho jayega system ko clean rakhne ke liye
+                    await message.reply(f"⏰ *Hold your energy, guardian! The cosmic core is cooling down. Wait {remaining}s.*", delete_after=3)
+                except:
+                    pass
+                return
+        
+        # Cooldown timer update karo
+        bot.chat_cooldowns[user_id] = current_time
+
         async with message.channel.typing():
             clean_message = message.content.replace(f'<@{bot.user.id}>', '').replace(f'<@!{bot.user.id}>', '').strip()
             
@@ -217,4 +237,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-        
+            
