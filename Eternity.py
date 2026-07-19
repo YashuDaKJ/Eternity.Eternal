@@ -81,9 +81,9 @@ class EternityBot(commands.Bot):
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
-            # FIXED: Corrected indentation and model parameters initialization
+            # FIXED: Switched model to gemini-2.5-flash-lite for higher RPM and daily quotas!
             model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash',
+                model_name='gemini-2.5-flash-lite',
                 system_instruction=combined_instructions
             )     
             
@@ -156,7 +156,6 @@ async def on_message(message):
     # -------------------------------------------------------------
     # 🌟 GIF RECOGNITION & TRIGGER RESPONSES
     # -------------------------------------------------------------
-    # Check if the incoming message contains a GIF via link or attachment
     is_gif = "tenor.com" in content_lower or "giphy.com" in content_lower
     if not is_gif and message.attachments:
         is_gif = any(att.filename.lower().endswith('.gif') for att in message.attachments)
@@ -164,11 +163,10 @@ async def on_message(message):
     if is_gif:
         print(f"🌌 [GIF Detected] in channel {message.channel.id} by {message.author}")
 
-    # Send a specific cosmic GIF when a target phrase is parsed
     if content_lower == "protect the faction" or content_lower == "?cosmicgif":
         cosmic_gif_url = "https://tenor.com/view/nebula-galaxy-space-cosmic-universe-gif-22445853"
         await message.channel.send(cosmic_gif_url)
-        return  # Stops execution here so it doesn't trigger the AI system simultaneously
+        return  
     # -------------------------------------------------------------
     
     is_pinged_or_replied = bot.user.mentioned_in(message)
@@ -187,7 +185,6 @@ async def on_message(message):
         async with message.channel.typing():
             clean_message = message.content.replace(f'<@{bot.user.id}>', '').replace(f'<@!{bot.user.id}>', '').strip()
             
-            # Sync text context if the user sends a raw GIF attachment/link without typing words
             if not clean_message and is_gif:
                 clean_message = "Scan this GIF asset I sent you!"
             elif not clean_message and message.attachments:
