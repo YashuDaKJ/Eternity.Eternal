@@ -4,6 +4,7 @@ from discord import app_commands
 import google.generativeai as genai
 import requests
 from datetime import timedelta
+import faction_data  # Imported to give /ask the full knowledge matrix
 
 class EternityCommands(commands.Cog):
     def __init__(self, bot):
@@ -71,7 +72,17 @@ class EternityCommands(commands.Cog):
     async def ask(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
         try:
-            model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=self.bot.SYSTEM_PROMPT)
+            # FIXED: Merged faction prompts so /ask is smart, and switched to gemini-2.5-flash-lite!
+            combined_instructions = (
+                f"{self.bot.SYSTEM_PROMPT}\n\n"
+                f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
+            )
+            
+            model = genai.GenerativeModel(
+                model_name='gemini-2.5-flash-lite', 
+                system_instruction=combined_instructions
+            )
+            
             response = model.generate_content(question)
             answer = response.text
             formatted_response = f"**Input Query:** {question}\n\n✨ **Eternity Output:** {answer}"
@@ -84,7 +95,11 @@ class EternityCommands(commands.Cog):
             else:
                 await interaction.followup.send(formatted_response)
         except Exception as e:
-            await interaction.followup.send(f"💠 System Core Exception: {str(e)}")
+            # Added a smart error shield check here too just in case!
+            if "429" in str(e) or "quota" in str(e).lower():
+                await interaction.followup.send("💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*")
+            else:
+                await interaction.followup.send(f"💠 System Core Exception: {str(e)}")
 
     @app_commands.command(name="analyze", description="Upload file assets for system vision processing")
     @app_commands.describe(prompt="Context description or processing instructions", attachment="Target media file array")
@@ -224,4 +239,4 @@ class EternityCommands(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(EternityCommands(bot))
-        
+            
