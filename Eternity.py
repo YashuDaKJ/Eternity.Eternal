@@ -81,9 +81,9 @@ class EternityBot(commands.Bot):
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
-            # USING: gemini-2.5-flash-lite for higher RPM and stable quotas!
+            # FIXED: Model name changed to fix 404 error and handle requests stably!
             model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash-lite',
+                model_name='gemini-2.5-flash',
                 system_instruction=combined_instructions
             )     
             
@@ -102,7 +102,7 @@ class EternityBot(commands.Bot):
             return assistant_message
         except Exception as e:
             print(f"Error captured in Gemini Call: {e}")
-            # SMART ERROR HANDLING: Clean response for quota issues
+            # SMART ERROR HANDLING: Clean response for quota or missing model issues
             if "429" in str(e) or "quota" in str(e).lower():
                 return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
             return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
@@ -217,3 +217,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
+        
