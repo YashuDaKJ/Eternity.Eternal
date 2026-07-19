@@ -1,11 +1,51 @@
+import os
 import discord
 from discord.ext import commands
 from discord import app_commands
 import google.generativeai as genai
 import requests
 from datetime import timedelta
-import core_data as faction_data  # Linked perfectly with your new secure config!
+import core_data as faction_data  # Linked perfectly with your data module
 
+# ==========================================
+# INTERACTIVE HELP UI LAYOUT MODULES
+# ==========================================
+class HelpDropdown(discord.ui.Select):
+    def __init__(self, special_channel_id):
+        self.special_channel_id = special_channel_id
+        options = [
+            discord.SelectOption(label="Core Utilities", description="Basic interaction framework and AI interfaces", emoji="🌌"),
+            discord.SelectOption(label="Moderation Vectors", description="Administrative commands for faction order", emoji="🛡️")
+        ]
+        super().__init__(placeholder="Select system architecture...", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        if self.values[0] == "Core Utilities":
+            embed = discord.Embed(title="🌌 Core System Utilities", color=discord.Color.from_rgb(0, 191, 255))
+            embed.add_field(name="`?ping`", value="Execute network speed diagnostics.", inline=False)
+            embed.add_field(name="`/ask`", value="Direct query interface to the core AI instance from any permitted node.", inline=False)
+            embed.add_field(name="`/analyze`", value="Provide binary assets (images/files) for standard analytical scan.", inline=False)
+            embed.add_field(name="💬 AI Integration", value=f"Continuous response node active in <#{self.special_channel_id}>.", inline=False)
+            await interaction.response.edit_message(embed=embed)
+        elif self.values[0] == "Moderation Vectors":
+            embed = discord.Embed(title="🛡️ Moderation & Enforcement Vectors", color=discord.Color.red())
+            embed.add_field(name="`/warn`", value="Issue a formal policy violation notice to an element.", inline=False)
+            embed.add_field(name="`/timeout`", value="Apply temporary communication suppression matrix (Mute).", inline=False)
+            embed.add_field(name="`/clear`", value="Purge a specific quantity of transmission frames from the channel.", inline=False)
+            embed.add_field(name="`/kick`", value="Remove a target element from the active guild framework.", inline=False)
+            embed.add_field(name="`/ban`", value="Permanently sever a disruptive element's network connection.", inline=False)
+            embed.add_field(name="`/unban`", value="Restore connection capabilities to a previously terminated element.", inline=False)
+            await interaction.response.edit_message(embed=embed)
+
+class HelpView(discord.ui.View):
+    def __init__(self, special_channel_id):
+        super().__init__()
+        self.add_item(HelpDropdown(special_channel_id))
+
+
+# ==========================================
+# MAIN EXTENSION COMMAND MODULE FOR ETERNITY
+# ==========================================
 class EternityCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -24,39 +64,6 @@ class EternityCommands(commands.Cog):
             
         return False
 
-    # Dropdown interactive logic for system diagnostics/help
-    class HelpDropdown(discord.ui.Select):
-        def __init__(self, special_channel_id):
-            self.special_channel_id = special_channel_id
-            options = [
-                discord.SelectOption(label="Core Utilities", description="Basic interaction framework and AI interfaces", emoji="🌌"),
-                discord.SelectOption(label="Moderation Vectors", description="Administrative commands for faction order", emoji="🛡️")
-            ]
-            super().__init__(placeholder="Select system architecture...", min_values=1, max_values=1, options=options)
-
-        async def callback(self, interaction: discord.Interaction):
-            if self.values[0] == "Core Utilities":
-                embed = discord.Embed(title="🌌 Core System Utilities", color=discord.Color.from_rgb(0, 191, 255))
-                embed.add_field(name="`?ping`", value="Execute network speed diagnostics.", inline=False)
-                embed.add_field(name="`/ask`", value="Direct query interface to the core AI instance from any permitted node.", inline=False)
-                embed.add_field(name="`/analyze`", value="Provide binary assets (images/files) for standard analytical scan.", inline=False)
-                embed.add_field(name="💬 AI Integration", value=f"Continuous response node active in <#{self.special_channel_id}>.", inline=False)
-                await interaction.response.edit_message(embed=embed)
-            elif self.values[0] == "Moderation Vectors":
-                embed = discord.Embed(title="🛡️ Moderation & Enforcement Vectors", color=discord.Color.red())
-                embed.add_field(name="`/warn`", value="Issue a formal policy violation notice to an element.", inline=False)
-                embed.add_field(name="`/timeout`", value="Apply temporary communication suppression matrix (Mute).", inline=False)
-                embed.add_field(name="`/clear`", value="Purge a specific quantity of transmission frames from the channel.", inline=False)
-                embed.add_field(name="`/kick`", value="Remove a target element from the active guild framework.", inline=False)
-                embed.add_field(name="`/ban`", value="Permanently sever a disruptive element's network connection.", inline=False)
-                embed.add_field(name="`/unban`", value="Restore connection capabilities to a previously terminated element.", inline=False)
-                await interaction.response.edit_message(embed=embed)
-
-    class HelpView(discord.ui.View):
-        def __init__(self, special_channel_id):
-            super().__init__()
-            self.add_item(EternityCommands.HelpDropdown(special_channel_id))
-
     @app_commands.command(name="help", description="Access the functional operations directory of Eternity")
     async def help_command(self, interaction: discord.Interaction):
         embed = discord.Embed(
@@ -65,7 +72,7 @@ class EternityCommands(commands.Cog):
             color=discord.Color.from_rgb(0, 191, 255)
         )
         embed.set_footer(text="System Architecture Online")
-        await interaction.response.send_message(embed=embed, view=self.HelpView(self.bot.SPECIAL_CHANNEL_ID), ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=HelpView(self.bot.SPECIAL_CHANNEL_ID), ephemeral=True)
 
     @app_commands.command(name="ask", description="Query Eternity anywhere on the communication network")
     @app_commands.describe(question="Input transaction string for the AI database")
@@ -243,7 +250,6 @@ class EternityCommands(commands.Cog):
         try:
             user = await self.bot.fetch_user(int(user_id))
             await interaction.guild.unban(user, reason=reason)
-            # FIXED: Changed color from invalid green() to proper discord.Color.green()
             embed = discord.Embed(title="🔓 Element Clearance Restored", color=discord.Color.green())
             embed.add_field(name="Target User", value=user.name, inline=True)
             embed.add_field(name="Status Matrix", value="Restored", inline=True)
@@ -256,4 +262,4 @@ class EternityCommands(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(EternityCommands(bot))
-            
+        
