@@ -7,6 +7,7 @@ from threading import Thread
 from flask import Flask
 import requests
 import time
+import motor.motor_asyncio  # Async MongoDB driver for discord.py
 
 # ==========================================
 # 1. SETUP FLASK SERVER & HEARTBEAT ENGINE
@@ -44,6 +45,7 @@ Thread(target=self_ping_loop, daemon=True).start()
 # ==========================================
 DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+MONGO_URI = os.getenv('MONGO_URI')  # Grab your connection string
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -66,9 +68,22 @@ class EternityBot(commands.Bot):
         # Pull personality layer directly from core_data module
         self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
         
+        # Initialize Database connection variables
+        if not MONGO_URI:
+            print("⚠️ WARNING: MONGO_URI environment variable is missing! Database features will fail.")
+            self.db_client = None
+            self.db = None
+            self.profiles = None
+        else:
+            self.db_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
+            self.db = self.db_client["eternal_faction_db"]
+            self.profiles = self.db["user_profiles"]  # Shared collection for economy/profiles
+            print("🛰️ MongoDB Atlas Pipeline: Connected to ClusterEternal successfully!")
+        
         self.conversation_history = {}
-        self.shard_currency = {}  # Faction economy system (Eternity Shards)
-        self.explore_cooldowns = {}
+        # 🟢 UPGRADE: Local economy/cooldown dictionaries removed! 
+        # All tracking now redirects seamlessly to self.profiles collection.
+        
         # ⏱️ Set up dictionary to track chat rate limits and cooldowns
         self.chat_cooldowns = {}
 
