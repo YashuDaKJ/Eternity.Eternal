@@ -17,7 +17,7 @@ hosting, or using any part of this repository, you agree to the following terms:
      developed herein) for public deployment or in any server without the 
      explicit prior written consent of the sole copyright holder (YashuDaKJ).
    - The custom personality prompts, data assets (including but not limited 
-     to `faction_data.py`), and configuration files contained in this repository 
+     to `core_data.py`), and configuration files contained in this repository 
      remain the exclusive personal intellectual property of YashuDaKJ. 
 3. UNILATERAL REVOCATION (THE "MARJI" CLAUSE):
    The copyright holder (YashuDaKJ) reserves the absolute, unilateral right 
