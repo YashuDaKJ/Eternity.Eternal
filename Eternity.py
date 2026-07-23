@@ -19,7 +19,7 @@ def home():
     return "Eternity is online, glowing, and protecting the faction 24/7!"
 
 def run_web_server():
-    port = int(os.getenv("PORT", 10000))
+    port = int(os.getenv("PORT", 7860))
     app.run(host='0.0.0.0', port=port)
 
 def self_ping_loop():
