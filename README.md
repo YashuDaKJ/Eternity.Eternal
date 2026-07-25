@@ -2,7 +2,7 @@
   <img src="https://cdn.discordapp.com/attachments/1492172037500698758/1528034472929395029/Eternity_.png?ex=6a5cd47f&is=6a5b82ff&hm=d38264d04144342cb643c85d9cc11d3102dd49340724dda0e68fdc657b5a369f&" alt="Eternity Logo" width="200"/>
 </p>
   
-# 🌌 Eternity | Eternal Faction Guardian Bot
+# 🌌 Eternity | Moderation Bot
 
 Welcome to the official repository of **Eternity**, the sharp-witted cosmic guardian and security core of the **Eternal** faction! Built with Python and Discord.py, and powered by Gemini 2.5 Flash to maintain absolute order and server safety.
 
