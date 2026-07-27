@@ -13,20 +13,47 @@ The project is structured with a modular Cogs setup, allowing isolated feature m
 ## 🛠️ System Overview & Architecture
 
 * **Modular Cogs Architecture:** Decoupled functional modules (`utilities`, `moderation`, `reactions`) to keep the main event loop clean and maintainable.
-* **Contextual AI Integration:** Generates contextual responses based on internal faction parameters and dynamic message histories via Gemini 2.5 Flash.
+* **Contextual AI Integration:** Generates contextual responses based on dynamic message histories via Gemini 2.5 Flash.
 * **Direct Vision Processing:** Accepts direct image attachments and media assets within conversational channels for automated scanning and responses.
 * **Dual-Command Interface:** Full support for modern Discord Slash (`/`) Application Commands along with legacy Message Prefix (`?`) fallbacks.
 * **Continuous Uptime Stack:** Embedded lightweight Web Server (Flask) paired with a background heartbeat thread to prevent container sleeping on hosted platforms like Render.
 
 ---
 
-## 📁 Repository Structure
+## 🛡️ Command Matrix
 
-```text
-├── Eternity.py         # Application entry point, client initialization, and core events
-├── core_data.py        # System instructions, personality prompts, and faction database
-├── cogs/
-│   ├── utilities.py    # General interaction nodes (/help, /ask, /behave)
-│   ├── moderation.py   # Administrative enforcement (/warn, /timeout, /clear, /kick, /ban, /unban)
-│   └── reactions.py    # Background event listeners, GIF parsing, and keyword reactions
-└── requirements.txt    # Application dependencies
+Eternity operates primary operations via Discord Slash Commands (`/`).
+
+### 🌌 Utilities & Query Intelligence
+| Command | Parameters | Description |
+| :--- | :--- | :--- |
+| `/help` | None | Displays an interactive interface listing all operational parameters. |
+| `/ask` | `question` | Queries the core AI model for direct responses and faction assistance. |
+| `?ping` | None | Measures direct gateway latency between the bot framework and Discord's servers. |
+
+### 🛑 Administrative & Moderation Commands
+| Command | Parameters | Hierarchy / Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `/warn` | `target`, `reason` | Mod / Admin | Issues an official violation warning notice to a specified member. |
+| `/timeout`| `target`, `minutes`, `reason` | Mod / Admin | Applies temporary communication suppression (Mute) to an element. |
+| `/clear` | `amount` | Mod / Admin | Purges specified recent message frames (1–100 limit). |
+| `/kick` | `target`, `reason` | Mod / Admin | Removes an element from the active server footprint. |
+| `/ban` | `target`, `reason` | Admin Only | Permanently terminates a disruptive member's network connection. |
+| `/unban` | `user_id`, `reason` | Admin Only | Restores network access rights to a previously banned Discord Snowflake ID. |
+| `/behave` | `target`, `rule` | Admin Only | Issues an explicit behavior directive to an individual user. |
+
+---
+
+## ⚡ Deployment & Resource Specifications
+
+Eternity is optimized to run efficiently with minimal server footprint on cloud environments (e.g., Render, Railway, VPS) or local environments.
+
+### System Requirements
+| Resource | Minimum Requirement | Recommended Specification |
+| :--- | :--- | :--- |
+| **CPU** | 0.1 vCPU (Shared) | 0.5 vCPU |
+| **RAM** | 256 MB | 512 MB |
+| **Disk Space** | 100 MB | 500 MB |
+| **Runtime Environment** | Python 3.10+ | Python 3.11+ |
+
+---
