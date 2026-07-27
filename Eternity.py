@@ -2,12 +2,12 @@ import os
 import discord
 from discord.ext import commands
 import google.generativeai as genai
-import core_data as faction_data  # Linked perfectly with your data module!
+import core_data as faction_data
 from threading import Thread
 from flask import Flask
 import requests
 import time
-import motor.motor_asyncio  # Async MongoDB driver for discord.py
+import motor.motor_asyncio
 
 # ==========================================
 # 1. SETUP FLASK SERVER & HEARTBEAT ENGINE
@@ -45,7 +45,7 @@ Thread(target=self_ping_loop, daemon=True).start()
 # ==========================================
 DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-MONGO_URI = os.getenv('MONGO_URI')  # Grab your connection string
+MONGO_URI = os.getenv('MONGO_URI')
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -77,14 +77,10 @@ class EternityBot(commands.Bot):
         else:
             self.db_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
             self.db = self.db_client["eternal_faction_db"]
-            self.profiles = self.db["user_profiles"]  # Shared collection for economy/profiles
+            self.profiles = self.db["user_profiles"]
             print("🛰️ MongoDB Atlas Pipeline: Connected to ClusterEternal successfully!")
         
         self.conversation_history = {}
-        # 🟢 UPGRADE: Local economy/cooldown dictionaries removed! 
-        # All tracking now redirects seamlessly to self.profiles collection.
-        
-        # ⏱️ Set up dictionary to track chat rate limits and cooldowns
         self.chat_cooldowns = {}
 
     async def get_gemini_response(self, user_message: str, user_id: int, attachment_data=None) -> str:
@@ -92,14 +88,13 @@ class EternityBot(commands.Bot):
             if user_id not in self.conversation_history:
                 self.conversation_history[user_id] = []
 
-            # Combine system instruction and faction data for the prompt
             combined_instructions = (
                 f"{self.SYSTEM_PROMPT}\n\n"
                 f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
             )
 
             model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
+                model_name='gemini-2.0-flash',
                 system_instruction=combined_instructions
             )     
             
@@ -107,7 +102,6 @@ class EternityBot(commands.Bot):
                 response = model.generate_content([user_message, attachment_data])
                 return response.text
                 
-            # 📈 OPTIMIZATION FIXED: Truncate BEFORE sending to the API call to keep context lean and clean!
             if len(self.conversation_history[user_id]) > 15:
                 self.conversation_history[user_id] = self.conversation_history[user_id][-15:]
 
@@ -125,9 +119,18 @@ class EternityBot(commands.Bot):
             return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
 
     async def setup_hook(self):
-        # Load the commands file dynamically
-        await self.load_extension('commands')
-        print("⚡ Commands extension loaded successfully!")
+        # Dynamically load extension Cogs from cogs directory
+        initial_extensions = [
+            'cogs.utilities',
+            'cogs.moderation'
+        ]
+        
+        for extension in initial_extensions:
+            try:
+                await self.load_extension(extension)
+                print(f"⚡ Extension '{extension}' loaded successfully!")
+            except Exception as e:
+                print(f"❌ Failed to load extension '{extension}': {e}")
 
 bot = EternityBot()
 
@@ -154,37 +157,26 @@ async def on_message(message):
     if message.author.bot or message.mention_everyone:
         return
     
-    # 🛡️ ARCHITECTURAL INTERCEPT FIXED: If message starts with a command prefix, execute and exit cleanly!
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
         return
     
     content_lower = message.content.lower()
     
-    # -------------------------------------------------------------
-    # 🌟 AUTOMATIC REACTION TRIGGERS
-    # -------------------------------------------------------------
     if "eternal" in content_lower or "victory" in content_lower:
         try:
             await message.add_reaction("💠")
         except:
             pass
 
-    # -------------------------------------------------------------
-    # 🌟 GIF RECOGNITION & TRIGGER RESPONSES
-    # -------------------------------------------------------------
     is_gif = "tenor.com" in content_lower or "giphy.com" in content_lower
     if not is_gif and message.attachments:
         is_gif = any(att.filename.lower().endswith('.gif') for att in message.attachments)
-        
-    if is_gif:
-        print(f"🌌 [GIF Detected] in channel {message.channel.id} by {message.author}")
 
     if content_lower == "protect the faction" or content_lower == "?cosmicgif":
         cosmic_gif_url = "https://tenor.com/view/nebula-galaxy-space-cosmic-universe-gif-22445853"
         await message.channel.send(cosmic_gif_url)
         return  
-    # -------------------------------------------------------------
     
     is_pinged_or_replied = bot.user.mentioned_in(message)
     if not is_pinged_or_replied and message.reference:
@@ -199,22 +191,18 @@ async def on_message(message):
     should_reply = (message.channel.id == bot.SPECIAL_CHANNEL_ID) or is_pinged_or_replied or name_called
 
     if should_reply:
-        
-        # ⏱️ IMPLEMENTATION: 5-Second Cooldown Check
         current_time = time.time()
         user_id = message.author.id
         if user_id in bot.chat_cooldowns:
             elapsed = current_time - bot.chat_cooldowns[user_id]
-            if elapsed < 5:  # Trigger if less than 5 seconds have elapsed
+            if elapsed < 5:
                 remaining = int(5 - elapsed)
                 try:
-                    # Message auto-deletes after 3 seconds to preserve chat cleanliness
                     await message.reply(f"⏰ *Hold your energy, guardian! The cosmic core is cooling down. Wait {remaining}s.*", delete_after=3)
                 except:
                     pass
                 return
         
-        # Update the active user cooldown timestamp
         bot.chat_cooldowns[user_id] = current_time
 
         async with message.channel.typing():
@@ -253,3 +241,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
+            
