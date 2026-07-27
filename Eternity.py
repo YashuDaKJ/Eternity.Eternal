@@ -122,7 +122,8 @@ class EternityBot(commands.Bot):
         # Dynamically load extension Cogs from cogs directory
         initial_extensions = [
             'cogs.utilities',
-            'cogs.moderation'
+            'cogs.moderation',
+            'cogs.reactions'
         ]
         
         for extension in initial_extensions:
@@ -241,4 +242,3 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-            
