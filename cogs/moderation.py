@@ -35,11 +35,7 @@ class Moderation(commands.Cog):
         embed.add_field(name="Infraction Reason", value=reason, inline=False)
         embed.set_footer(text="Further violations will result in automatic containment protocols.")
 
-        try:
-            await target.send(f"⚠️ You received an official warning in **{interaction.guild.name}**.\n**Reason:** {reason}")
-        except discord.Forbidden:
-            pass
-
+        # Send warning notice only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="timeout", description="Applies communication suppression matrix to an element (Mute)")
@@ -59,6 +55,8 @@ class Moderation(commands.Cog):
         embed.add_field(name="Target User", value=target.mention, inline=True)
         embed.add_field(name="Duration Vector", value=f"{minutes} Minutes", inline=True)
         embed.add_field(name="Reason Logged", value=reason, inline=False)
+        
+        # Send feedback only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="clear", description="Purges a specific quantity of transmission frames from channel")
@@ -92,6 +90,8 @@ class Moderation(commands.Cog):
         embed.add_field(name="Target User", value=target.mention, inline=True)
         embed.add_field(name="Enforcement Action", value="Ejection (Kick)", inline=True)
         embed.add_field(name="Reason Logged", value=reason, inline=False)
+        
+        # Send feedback only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="ban", description="Terminates a member's network connection permanently")
@@ -110,6 +110,8 @@ class Moderation(commands.Cog):
         embed.add_field(name="Target User", value=target.mention, inline=True)
         embed.add_field(name="Enforcement Action", value="Permanent Ban", inline=True)
         embed.add_field(name="Reason Logged", value=reason, inline=False)
+        
+        # Send feedback only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="unban", description="Restores server connection rights to a previously banned ID")
@@ -126,6 +128,8 @@ class Moderation(commands.Cog):
             embed.add_field(name="Target User", value=user.name, inline=True)
             embed.add_field(name="Status Matrix", value="Restored", inline=True)
             embed.add_field(name="Reason Logged", value=reason, inline=False)
+            
+            # Send feedback only in the server channel, not via DM
             await interaction.response.send_message(embed=embed)
         except discord.NotFound:
             await interaction.response.send_message("❌ Execution Error: Specified user ID could not be resolved.", ephemeral=True)
