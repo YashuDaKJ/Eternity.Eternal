@@ -46,6 +46,7 @@ Thread(target=self_ping_loop, daemon=True).start()
 DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 MONGO_URI = os.getenv('MONGO_URI')
+OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))  # Default to first admin ID
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -157,6 +158,20 @@ async def ping(ctx):
 async def on_message(message):
     if message.author.bot or message.mention_everyone:
         return
+    
+    # ==========================================
+    # DM SECURITY CHECK - BLOCK AI IN DMs
+    # ==========================================
+    if message.guild is None:
+        # Check if sender is the bot owner
+        if message.author.id != OWNER_ID:
+            # Block non-owners from AI processing in DMs
+            try:
+                await message.reply("🔒 Direct messages are disabled for AI processing. Please use the server channels!")
+            except:
+                pass
+            return
+        # Owner can proceed normally in DMs for testing/management
     
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
