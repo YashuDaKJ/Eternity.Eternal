@@ -1,41 +1,32 @@
 <p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1492172037500698758/1528034472929395029/Eternity_.png?ex=6a5cd47f&is=6a5b82ff&hm=d38264d04144342cb643c85d9cc11d3102dd49340724dda0e68fdc657b5a369f&" alt="Eternity Logo" width="200"/>
+  <img src="https://cdn.discordapp.com/attachments/1492172037500698758/1528034472929395029/Eternity_.png?ex=6a5cd47f&is=6a5b82ff&hm=d38264d04144342cb643c85d9cc11d3102dd49340724dda0e68fdc657b5a369f&" alt="Eternity Logo" width="180"/>
 </p>
-  
-# 🌌 Eternity | Moderation Bot
 
-Welcome to the official repository of **Eternity**, the sharp-witted cosmic guardian and security core of the **Eternal** faction! Built with Python and Discord.py, and powered by Gemini 2.5 Flash to maintain absolute order and server safety.
+# 🌌 Eternity — Guild Moderation & Protection Core
 
----
+**Eternity** is an active security and moderation Discord bot built explicitly to safeguard the **Eternal** faction server. Designed with modern asynchronous Python practices, it combines standard administrative command sets with deep AI-driven conversational context using Google's **Gemini 2.5 Flash** API.
 
-## 💠 Core Features
-* **AI Chat Integration:** Advanced situational conversation customized for the Eternal faction network to assist and manage members.
-* **Dual-Command Security:** Fully optimized to process both modern Slash (`/`) commands and classic Prefix (`?`) commands seamlessly.
-* **Cosmic Vision (Media Scan):** Advanced multimedia analysis capable of scanning uploaded images, video, and audio assets for security verification.
-* **Faction Protection & Monitoring:** Automated systems to filter content, manage configurations, and track server operations.
-* **24/7 Infrastructure:** Equipped with an internal auto-heartbeat engine to maintain continuous security deployment on Render.
+The project is structured with a modular Cogs setup, allowing isolated feature maintenance across moderation, utilities, and automated event triggers.
 
 ---
 
-## ⚔️ Available Commands
+## 🛠️ System Overview & Architecture
 
-The bot perfectly supports both **Prefix (`?`)** and **Slash (`/`)** command formats.
-
-### 🌌 General & AI Assistance
-* `/help` or `?help` - Open the interactive command center framework dropdown.
-* `/ping` or `?ping` - Check Eternity's quantum latency speed.
-* `/ask <question>` or `?ask <question>` - Consult the guardian's intellect for faction queries.
-* `/analyze <prompt> <file>` - Scan and verify multimedia files using Cosmic Vision.
-
-### 🛡️ Faction Moderation & Security
-* `/warn <user> <reason>` or `?warn` - Issue an official security warning to a user.
-* `/kick <user> <reason>` - Remove an unauthorized or disruptive user from the sector.
-* `/ban <user> <reason>` - Permanently blacklist a malicious user from the faction network.
-* `/purge <amount>` - Instantly clear text clutter and malicious logs from the channel.
-
-### 👑 High Rank Executive (Admin Only)
-* `/behave <script>` or `?behave <script>` - Broadcast urgent execution scripts directly through Eternity's frequency matrix.
+* **Modular Cogs Architecture:** Decoupled functional modules (`utilities`, `moderation`, `reactions`) to keep the main event loop clean and maintainable.
+* **Contextual AI Integration:** Generates contextual responses based on internal faction parameters and dynamic message histories via Gemini 2.5 Flash.
+* **Direct Vision Processing:** Accepts direct image attachments and media assets within conversational channels for automated scanning and responses.
+* **Dual-Command Interface:** Full support for modern Discord Slash (`/`) Application Commands along with legacy Message Prefix (`?`) fallbacks.
+* **Continuous Uptime Stack:** Embedded lightweight Web Server (Flask) paired with a background heartbeat thread to prevent container sleeping on hosted platforms like Render.
 
 ---
-Guarding the Eternal faction since 2025. Undefeated & Massive! 🔥
 
+## 📁 Repository Structure
+
+```text
+├── Eternity.py         # Application entry point, client initialization, and core events
+├── core_data.py        # System instructions, personality prompts, and faction database
+├── cogs/
+│   ├── utilities.py    # General interaction nodes (/help, /ask, /behave)
+│   ├── moderation.py   # Administrative enforcement (/warn, /timeout, /clear, /kick, /ban, /unban)
+│   └── reactions.py    # Background event listeners, GIF parsing, and keyword reactions
+└── requirements.txt    # Application dependencies
