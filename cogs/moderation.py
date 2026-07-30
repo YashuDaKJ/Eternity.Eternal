@@ -18,6 +18,26 @@ class Moderation(commands.Cog):
             return True
         return False
 
+    # ==========================================
+    # ADMIN EXCLUSIVE COVERT COPY COMMAND
+    # ==========================================
+    @app_commands.command(name="copy", description="Copies and transmits an exact message anonymously (Admin Only).")
+    @app_commands.describe(message="The exact text string to broadcast via the bot instance")
+    async def copy(self, interaction: discord.Interaction, message: str):
+        # Strict Supreme Admin validation check
+        if interaction.user.id not in self.bot.ADMIN_IDS:
+            await interaction.response.send_message("❌ Security alert: Authorization failure.", ephemeral=True)
+            return
+
+        # Silently transmit the text to the active channel
+        await interaction.channel.send(message)
+
+        # Invisible confirmation response sent only to the Admin caller
+        await interaction.response.send_message("✅ Transmission successfully deployed.", ephemeral=True)
+
+    # ==========================================
+    # STANDARD MODERATION COMMANDS
+    # ==========================================
     @app_commands.command(name="warn", description="Issues a formal protocol infraction warning to a target member")
     @app_commands.describe(target="The user node receiving the warning infraction", reason="Reason for issuing the notice")
     async def warn(self, interaction: discord.Interaction, target: discord.Member, reason: str):
@@ -138,3 +158,4 @@ class Moderation(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
+                      
