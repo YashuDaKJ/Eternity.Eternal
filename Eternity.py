@@ -120,12 +120,18 @@ class EternityBot(commands.Bot):
             return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
 
     async def setup_hook(self):
+        # Auto-detecting utility module (utility or utilities)
         initial_extensions = [
-            'cogs.utilities',
             'cogs.moderation',
             'cogs.reactions'
         ]
         
+        # Checking file presence
+        if os.path.exists("cogs/utility.py"):
+            initial_extensions.append('cogs.utility')
+        elif os.path.exists("cogs/utilities.py"):
+            initial_extensions.append('cogs.utilities')
+            
         for extension in initial_extensions:
             try:
                 await self.load_extension(extension)
@@ -152,11 +158,12 @@ async def ping(ctx):
 # ADVANCED SYNC COMMAND (OWNER ONLY)
 # ==========================================
 @bot.command(name='sync')
-async def sync(ctx, spec: Optional[Literal["~", "*", "^"]] = None):
+async def sync(ctx, spec: Optional[Literal["~", "clear"]] = None):
     """
-    Syncs slash commands.
-    ?sync -> Syncs globally (takes up to 1 hour to show).
-    ?sync ~ -> Syncs instantly to the current server (Good for testing).
+    Syncs slash commands cleanly.
+    ?sync -> Syncs globally.
+    ?sync ~ -> Copies and Syncs cleanly to the current server.
+    ?sync clear -> Clears all commands from server tree to fix duplicates.
     """
     if ctx.author.id != OWNER_ID:
         return await ctx.send("❌ Security alert: You do not have permission to run this command.")
@@ -164,16 +171,22 @@ async def sync(ctx, spec: Optional[Literal["~", "*", "^"]] = None):
     if ctx.guild is None:
         return await ctx.send("❌ Please run this command inside a server channel, not in DMs!")
 
-    await ctx.send("🔄 Copying global slash commands and syncing to this server...")
+    if spec == "clear":
+        await ctx.send("🧹 Wiping server command tree...")
+        bot.tree.clear_commands(guild=ctx.guild)
+        synced = await bot.tree.sync(guild=ctx.guild)
+        return await ctx.send("✨ Server command list wiped! Now run `?sync ~` once.")
+
+    await ctx.send("🔄 Force-refreshing and syncing commands...")
     
     try:
         if spec == "~":
             bot.tree.copy_global_to(guild=ctx.guild)
             synced = await bot.tree.sync(guild=ctx.guild)
-            await ctx.send(f"✅ Instantly synced **{len(synced)}** commands to **{ctx.guild.name}**! Check your `/` menu now!")
+            await ctx.send(f"✅ Synced **{len(synced)}** commands directly to **{ctx.guild.name}**! Check `/` menu now.")
         else:
             synced = await bot.tree.sync()
-            await ctx.send(f"✅ Synced **{len(synced)}** commands globally. (Note: Global sync can take up to 1 hour to appear on all devices).")
+            await ctx.send(f"✅ Synced **{len(synced)}** commands globally.")
     except Exception as e:
         await ctx.send(f"❌ Synchronization failed: {e}")
 
@@ -193,7 +206,6 @@ async def on_message(message):
                 pass
             return
     
-    # Ensure commands are processed first
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
         return
@@ -278,4 +290,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-    
+                
