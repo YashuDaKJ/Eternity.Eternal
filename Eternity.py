@@ -142,7 +142,6 @@ bot = EternityBot()
 async def on_ready():
     print(f'{bot.user.name} is fully online and active!')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over Eternal"))
-    # Note: Automatic tree sync removed from on_ready to prevent rate limits. Use ?sync instead.
 
 @bot.command(name='ping')
 async def ping(ctx):
@@ -162,15 +161,19 @@ async def sync(ctx, spec: Optional[Literal["~", "*", "^"]] = None):
     if ctx.author.id != OWNER_ID:
         return await ctx.send("❌ Security alert: You do not have permission to run this command.")
 
-    await ctx.send("🔄 Syncing cosmic command protocols... please wait.")
+    if ctx.guild is None:
+        return await ctx.send("❌ Please run this command inside a server channel, not in DMs!")
+
+    await ctx.send("🔄 Copying global slash commands and syncing to this server...")
     
     try:
         if spec == "~":
+            bot.tree.copy_global_to(guild=ctx.guild)
             synced = await bot.tree.sync(guild=ctx.guild)
-            await ctx.send(f"✅ Instantly synced {len(synced)} commands to this server (`{ctx.guild.name}`). Check your `/` menu now!")
+            await ctx.send(f"✅ Instantly synced **{len(synced)}** commands to **{ctx.guild.name}**! Check your `/` menu now!")
         else:
             synced = await bot.tree.sync()
-            await ctx.send(f"✅ Synced {len(synced)} commands globally. (Note: Global sync can take up to 1 hour to appear on all devices).")
+            await ctx.send(f"✅ Synced **{len(synced)}** commands globally. (Note: Global sync can take up to 1 hour to appear on all devices).")
     except Exception as e:
         await ctx.send(f"❌ Synchronization failed: {e}")
 
@@ -275,4 +278,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-            
+    
