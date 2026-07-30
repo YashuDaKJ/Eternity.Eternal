@@ -36,6 +36,89 @@ class Moderation(commands.Cog):
         await interaction.response.send_message("✅ Transmission successfully deployed.", ephemeral=True)
 
     # ==========================================
+    # PUBLIC PLAYER COMMANDS (NO ADMIN REQUIRED)
+    # ==========================================
+    @app_commands.command(name="help", description="Displays system commands overview and navigation matrix")
+    async def help_command(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="📜 Command Protocol Matrix",
+            description="Available public interface modules for normal player nodes:",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="`/ping`", value="Checks bot connection latency", inline=False)
+        embed.add_field(name="`/userinfo [target]`", value="Displays digital footprint & roles of a player", inline=False)
+        embed.add_field(name="`/avatar [target]`", value="Fetches high-resolution profile picture", inline=False)
+        embed.add_field(name="`/afk [reason]`", value="Sets your status to away/AFK with a custom reason", inline=False)
+        embed.add_field(name="`/report [target] [reason]`", value="Discreetly files a violation notice to moderators", inline=False)
+        embed.set_footer(text="Absolute Ohio Command Core")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="afk", description="Registers your status as AFK (Away From Keyboard)")
+    @app_commands.describe(reason="Brief note explaining your absence")
+    async def afk(self, interaction: discord.Interaction, reason: str = "Away from keyboard"):
+        embed = discord.Embed(
+            title="🌙 AFK Status Activated",
+            description=f"{interaction.user.mention} is now marked as AFK.",
+            color=discord.Color.dark_grey()
+        )
+        embed.add_field(name="Reason Logged", value=reason, inline=False)
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="ping", description="Checks the bot connection latency")
+    async def ping(self, interaction: discord.Interaction):
+        latency = round(self.bot.latency * 1000)
+        embed = discord.Embed(
+            title="🏓 Pong!",
+            description=f"Bot Latency: `{latency}ms`",
+            color=discord.Color.blue()
+        )
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="userinfo", description="Displays digital footprint details of a target member")
+    @app_commands.describe(target="The player to view details for (leave empty for yourself)")
+    async def userinfo(self, interaction: discord.Interaction, target: discord.Member = None):
+        user = target or interaction.user
+        
+        roles = [role.mention for role in user.roles if role.name != "@everyone"]
+        roles_str = ", ".join(roles) if roles else "No specialized roles"
+
+        embed = discord.Embed(title=f"👤 Player Identification Matrix: {user.name}", color=discord.Color.cyan())
+        embed.set_thumbnail(url=user.display_avatar.url)
+        embed.add_field(name="User ID", value=f"`{user.id}`", inline=True)
+        embed.add_field(name="Account Created", value=user.created_at.strftime("%Y-%m-%d"), inline=True)
+        embed.add_field(name="Joined Server", value=user.joined_at.strftime("%Y-%m-%d"), inline=True)
+        embed.add_field(name="Roles Assigned", value=roles_str, inline=False)
+        
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="avatar", description="Fetches high-resolution profile avatar of a target node")
+    @app_commands.describe(target="The member whose avatar you want to inspect")
+    async def avatar(self, interaction: discord.Interaction, target: discord.Member = None):
+        user = target or interaction.user
+        embed = discord.Embed(title=f"🖼️ Avatar Display: {user.name}", color=discord.Color.purple())
+        embed.set_image(url=user.display_avatar.url)
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="report", description="Submits a formal player report to administration")
+    @app_commands.describe(target="The suspect user node", reason="Detailed explanation of the violation")
+    async def report(self, interaction: discord.Interaction, target: discord.Member, reason: str):
+        await interaction.response.send_message(
+            f"✅ Report logged successfully against {target.mention}. Moderation team notified.", 
+            ephemeral=True
+        )
+
+        log_channel_id = getattr(self.bot, 'LOG_CHANNEL_ID', None)
+        if log_channel_id:
+            channel = self.bot.get_channel(log_channel_id)
+            if channel:
+                embed = discord.Embed(title="🚨 User Report Filed", color=discord.Color.dark_red())
+                embed.add_field(name="Reported User", value=target.mention, inline=True)
+                embed.add_field(name="Filed By", value=interaction.user.mention, inline=True)
+                embed.add_field(name="Reason", value=reason, inline=False)
+                await channel.send(embed=embed)
+
+    # ==========================================
     # STANDARD MODERATION COMMANDS
     # ==========================================
     @app_commands.command(name="warn", description="Issues a formal protocol infraction warning to a target member")
@@ -55,7 +138,6 @@ class Moderation(commands.Cog):
         embed.add_field(name="Infraction Reason", value=reason, inline=False)
         embed.set_footer(text="Further violations will result in automatic containment protocols.")
 
-        # Send warning notice only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="timeout", description="Applies communication suppression matrix to an element (Mute)")
@@ -76,7 +158,6 @@ class Moderation(commands.Cog):
         embed.add_field(name="Duration Vector", value=f"{minutes} Minutes", inline=True)
         embed.add_field(name="Reason Logged", value=reason, inline=False)
         
-        # Send feedback only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="clear", description="Purges a specific quantity of transmission frames from channel")
@@ -111,7 +192,6 @@ class Moderation(commands.Cog):
         embed.add_field(name="Enforcement Action", value="Ejection (Kick)", inline=True)
         embed.add_field(name="Reason Logged", value=reason, inline=False)
         
-        # Send feedback only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="ban", description="Terminates a member's network connection permanently")
@@ -131,7 +211,6 @@ class Moderation(commands.Cog):
         embed.add_field(name="Enforcement Action", value="Permanent Ban", inline=True)
         embed.add_field(name="Reason Logged", value=reason, inline=False)
         
-        # Send feedback only in the server channel, not via DM
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="unban", description="Restores server connection rights to a previously banned ID")
@@ -149,7 +228,6 @@ class Moderation(commands.Cog):
             embed.add_field(name="Status Matrix", value="Restored", inline=True)
             embed.add_field(name="Reason Logged", value=reason, inline=False)
             
-            # Send feedback only in the server channel, not via DM
             await interaction.response.send_message(embed=embed)
         except discord.NotFound:
             await interaction.response.send_message("❌ Execution Error: Specified user ID could not be resolved.", ephemeral=True)
@@ -158,4 +236,4 @@ class Moderation(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
-                      
+            
