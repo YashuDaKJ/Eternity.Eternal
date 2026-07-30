@@ -26,24 +26,26 @@ class HelpDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         if self.values[0] == "Core Utilities":
             embed = discord.Embed(title="🌌 Core System Utilities", color=discord.Color.from_rgb(0, 191, 255))
-            embed.add_field(name="`/ask`", value="Direct query interface to the core AI instance from any permitted node.", inline=False)
-            embed.add_field(name="`/behave`", value="Issue a behavioral warning and protocol reminder to an element.", inline=False)
+            embed.add_field(name="`/ask`", value="Direct query interface to the core AI instance.", inline=False)
+            embed.add_field(name="`/behave`", value="Issue a behavioral warning and protocol reminder.", inline=False)
+            embed.add_field(name="`/userinfo`", value="Check detailed stats of a user node.", inline=False)
+            embed.add_field(name="`/avatar`", value="Fetch high resolution avatar.", inline=False)
+            embed.add_field(name="`/afk`", value="Set your away status.", inline=False)
             await interaction.response.edit_message(embed=embed)
         elif self.values[0] == "Moderation Vectors":
             embed = discord.Embed(title="🛡️ Moderation & Enforcement Vectors", color=discord.Color.red())
             embed.add_field(name="`/warn`", value="Issue a formal policy violation notice to an element.", inline=False)
             embed.add_field(name="`/timeout`", value="Apply temporary communication suppression matrix (Mute).", inline=False)
-            embed.add_field(name="`/clear`", value="Purge a specific quantity of transmission frames from the channel.", inline=False)
-            embed.add_field(name="`/kick`", value="Remove a target element from the active guild framework.", inline=False)
-            embed.add_field(name="`/ban`", value="Permanently sever a disruptive element's network connection.", inline=False)
-            embed.add_field(name="`/unban`", value="Restore connection capabilities to a previously terminated element.", inline=False)
+            embed.add_field(name="`/clear`", value="Purge a specific quantity of transmission frames.", inline=False)
+            embed.add_field(name="`/kick`", value="Remove a target element from the active guild.", inline=False)
+            embed.add_field(name="`/ban`", value="Permanently sever a disruptive element's connection.", inline=False)
+            embed.add_field(name="`/unban`", value="Restore connection capabilities to a terminated element.", inline=False)
             await interaction.response.edit_message(embed=embed)
 
 class HelpView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(HelpDropdown())
-
 
 # ==========================================
 # UTILITIES COG MODULE
@@ -136,3 +138,4 @@ class Utilities(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Utilities(bot))
+        
