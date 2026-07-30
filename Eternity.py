@@ -8,6 +8,7 @@ from flask import Flask
 import requests
 import time
 import motor.motor_asyncio
+from typing import Literal, Optional
 
 # ==========================================
 # 1. SETUP FLASK SERVER & HEARTBEAT ENGINE
@@ -46,7 +47,7 @@ Thread(target=self_ping_loop, daemon=True).start()
 DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 MONGO_URI = os.getenv('MONGO_URI')
-OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))  # Default to first admin ID
+OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -66,7 +67,6 @@ class EternityBot(commands.Bot):
         self.ADMIN_IDS = [1477528681709830297]
         self.MODERATOR_ROLE_ID = 1485660896746541259
         
-        # Pull personality layer directly from core_data module
         self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
         
         # Initialize Database connection variables
@@ -120,7 +120,6 @@ class EternityBot(commands.Bot):
             return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
 
     async def setup_hook(self):
-        # Dynamically load extension Cogs from cogs directory
         initial_extensions = [
             'cogs.utilities',
             'cogs.moderation',
@@ -137,42 +136,61 @@ class EternityBot(commands.Bot):
 bot = EternityBot()
 
 # ==========================================
-# 4. BOT EVENTS & TEXT CHAT EVENT
+# 4. BOT EVENTS & COMMANDS
 # ==========================================
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} is fully online and active!')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over Eternal"))
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands globally for Eternity.")
-    except Exception as e:
-        print(f"Slash sync error: {e}")
+    # Note: Automatic tree sync removed from on_ready to prevent rate limits. Use ?sync instead.
 
 @bot.command(name='ping')
 async def ping(ctx):
     latency = round(bot.latency * 1000)
     await ctx.send(f"✨ Sparkling! Pong! My cosmic waves reached you in {latency}ms. Ready for action?")
 
+# ==========================================
+# ADVANCED SYNC COMMAND (OWNER ONLY)
+# ==========================================
+@bot.command(name='sync')
+async def sync(ctx, spec: Optional[Literal["~", "*", "^"]] = None):
+    """
+    Syncs slash commands.
+    ?sync -> Syncs globally (takes up to 1 hour to show).
+    ?sync ~ -> Syncs instantly to the current server (Good for testing).
+    """
+    if ctx.author.id != OWNER_ID:
+        return await ctx.send("❌ Security alert: You do not have permission to run this command.")
+
+    await ctx.send("🔄 Syncing cosmic command protocols... please wait.")
+    
+    try:
+        if spec == "~":
+            synced = await bot.tree.sync(guild=ctx.guild)
+            await ctx.send(f"✅ Instantly synced {len(synced)} commands to this server (`{ctx.guild.name}`). Check your `/` menu now!")
+        else:
+            synced = await bot.tree.sync()
+            await ctx.send(f"✅ Synced {len(synced)} commands globally. (Note: Global sync can take up to 1 hour to appear on all devices).")
+    except Exception as e:
+        await ctx.send(f"❌ Synchronization failed: {e}")
+
+# ==========================================
+# MESSAGE EVENT HANDLING
+# ==========================================
 @bot.event
 async def on_message(message):
     if message.author.bot or message.mention_everyone:
         return
     
-    # ==========================================
-    # DM SECURITY CHECK - BLOCK AI IN DMs
-    # ==========================================
     if message.guild is None:
-        # Check if sender is the bot owner
         if message.author.id != OWNER_ID:
-            # Block non-owners from AI processing in DMs
             try:
                 await message.reply("🔒 Direct messages are disabled for AI processing. Please use the server channels!")
             except:
                 pass
             return
-        # Owner can proceed normally in DMs for testing/management
     
+    # Ensure commands are processed first
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
         return
@@ -257,3 +275,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
+            
