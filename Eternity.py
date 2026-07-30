@@ -120,13 +120,11 @@ class EternityBot(commands.Bot):
             return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
 
     async def setup_hook(self):
-        # Auto-detecting utility module (utility or utilities)
         initial_extensions = [
             'cogs.moderation',
             'cogs.reactions'
         ]
         
-        # Checking file presence
         if os.path.exists("cogs/utility.py"):
             initial_extensions.append('cogs.utility')
         elif os.path.exists("cogs/utilities.py"):
@@ -155,15 +153,14 @@ async def ping(ctx):
     await ctx.send(f"✨ Sparkling! Pong! My cosmic waves reached you in {latency}ms. Ready for action?")
 
 # ==========================================
-# ADVANCED SYNC COMMAND (OWNER ONLY)
+# CLEAN SYNC COMMAND (OWNER ONLY)
 # ==========================================
 @bot.command(name='sync')
-async def sync(ctx, spec: Optional[Literal["~", "clear"]] = None):
+async def sync(ctx, spec: Optional[Literal["clear"]] = None):
     """
-    Syncs slash commands cleanly.
-    ?sync -> Syncs globally.
-    ?sync ~ -> Copies and Syncs cleanly to the current server.
-    ?sync clear -> Clears all commands from server tree to fix duplicates.
+    Syncs slash commands cleanly without duplicates.
+    ?sync -> Syncs commands globally.
+    ?sync clear -> Clears server-specific duplicates.
     """
     if ctx.author.id != OWNER_ID:
         return await ctx.send("❌ Security alert: You do not have permission to run this command.")
@@ -172,21 +169,16 @@ async def sync(ctx, spec: Optional[Literal["~", "clear"]] = None):
         return await ctx.send("❌ Please run this command inside a server channel, not in DMs!")
 
     if spec == "clear":
-        await ctx.send("🧹 Wiping server command tree...")
+        await ctx.send("🧹 Clearing duplicate server commands...")
         bot.tree.clear_commands(guild=ctx.guild)
-        synced = await bot.tree.sync(guild=ctx.guild)
-        return await ctx.send("✨ Server command list wiped! Now run `?sync ~` once.")
+        await bot.tree.sync(guild=ctx.guild)
+        return await ctx.send("✨ Server duplicates cleared! Now run `?sync` once.")
 
-    await ctx.send("🔄 Force-refreshing and syncing commands...")
+    await ctx.send("🔄 Syncing clean commands globally...")
     
     try:
-        if spec == "~":
-            bot.tree.copy_global_to(guild=ctx.guild)
-            synced = await bot.tree.sync(guild=ctx.guild)
-            await ctx.send(f"✅ Synced **{len(synced)}** commands directly to **{ctx.guild.name}**! Check `/` menu now.")
-        else:
-            synced = await bot.tree.sync()
-            await ctx.send(f"✅ Synced **{len(synced)}** commands globally.")
+        synced = await bot.tree.sync()
+        await ctx.send(f"✅ Synced **{len(synced)}** clean commands globally! Check your `/` menu now.")
     except Exception as e:
         await ctx.send(f"❌ Synchronization failed: {e}")
 
@@ -290,4 +282,4 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-                
+            
