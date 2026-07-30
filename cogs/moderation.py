@@ -24,36 +24,16 @@ class Moderation(commands.Cog):
     @app_commands.command(name="copy", description="Copies and transmits an exact message anonymously (Admin Only).")
     @app_commands.describe(message="The exact text string to broadcast via the bot instance")
     async def copy(self, interaction: discord.Interaction, message: str):
-        # Strict Supreme Admin validation check
         if interaction.user.id not in self.bot.ADMIN_IDS:
             await interaction.response.send_message("❌ Security alert: Authorization failure.", ephemeral=True)
             return
 
-        # Silently transmit the text to the active channel
         await interaction.channel.send(message)
-
-        # Invisible confirmation response sent only to the Admin caller
         await interaction.response.send_message("✅ Transmission successfully deployed.", ephemeral=True)
 
     # ==========================================
-    # PUBLIC PLAYER COMMANDS (NO ADMIN REQUIRED)
+    # PUBLIC PLAYER UTILITIES
     # ==========================================
-    @app_commands.command(name="help", description="Displays system commands overview and navigation matrix")
-    async def help_command(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            title="📜 Command Protocol Matrix",
-            description="Available public interface modules for normal player nodes:",
-            color=discord.Color.blue()
-        )
-        embed.add_field(name="`/ping`", value="Checks bot connection latency", inline=False)
-        embed.add_field(name="`/userinfo [target]`", value="Displays digital footprint & roles of a player", inline=False)
-        embed.add_field(name="`/avatar [target]`", value="Fetches high-resolution profile picture", inline=False)
-        embed.add_field(name="`/afk [reason]`", value="Sets your status to away/AFK with a custom reason", inline=False)
-        embed.add_field(name="`/report [target] [reason]`", value="Discreetly files a violation notice to moderators", inline=False)
-        embed.set_footer(text="Absolute Ohio Command Core")
-        
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-
     @app_commands.command(name="afk", description="Registers your status as AFK (Away From Keyboard)")
     @app_commands.describe(reason="Brief note explaining your absence")
     async def afk(self, interaction: discord.Interaction, reason: str = "Away from keyboard"):
@@ -63,16 +43,6 @@ class Moderation(commands.Cog):
             color=discord.Color.dark_grey()
         )
         embed.add_field(name="Reason Logged", value=reason, inline=False)
-        await interaction.response.send_message(embed=embed)
-
-    @app_commands.command(name="ping", description="Checks the bot connection latency")
-    async def ping(self, interaction: discord.Interaction):
-        latency = round(self.bot.latency * 1000)
-        embed = discord.Embed(
-            title="🏓 Pong!",
-            description=f"Bot Latency: `{latency}ms`",
-            color=discord.Color.blue()
-        )
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="userinfo", description="Displays digital footprint details of a target member")
@@ -236,4 +206,4 @@ class Moderation(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
-            
+        
