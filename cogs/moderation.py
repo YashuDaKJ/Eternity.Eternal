@@ -24,43 +24,34 @@ class Moderation(commands.Cog):
     @app_commands.command(name="copy", description="Copies and transmits an exact message anonymously (Admin Only).")
     @app_commands.describe(
         message="The exact text string to broadcast via the bot instance",
-        channel_name="Target channel name, mention, or ID (Optional)"
+        target_channel="Target text channel to send to (Optional - defaults to current channel)"
     )
-    async def copy(self, interaction: discord.Interaction, message: str, channel_name: str = None):
+    async def copy(
+        self, 
+        interaction: discord.Interaction, 
+        message: str, 
+        target_channel: discord.TextChannel = None
+    ):
+        # 1. Admin restricted: Only user IDs in ADMIN_IDS can execute
         if interaction.user.id not in self.bot.ADMIN_IDS:
             await interaction.response.send_message("❌ Security alert: Authorization failure.", ephemeral=True)
             return
 
-        # Response is ephemeral so status feedback is visible ONLY to you
+        # 2. Ephemeral response: Output is hidden from everyone else
         await interaction.response.defer(ephemeral=True)
 
-        target_channel = interaction.channel
-
-        if channel_name:
-            clean_name = channel_name.strip("<#> ").lower()
-            found_channel = discord.utils.find(
-                lambda c: c.name.lower() == clean_name or str(c.id) == clean_name, 
-                interaction.guild.text_channels
-            )
-
-            if found_channel:
-                target_channel = found_channel
-            else:
-                await interaction.followup.send(
-                    f"❌ **Target Unresolved:** Could not find a text channel matching `{channel_name}`.", 
-                    ephemeral=True
-                )
-                return
+        destination = target_channel or interaction.channel
 
         try:
-            await target_channel.send(message)
+            # 3. Cross-channel broadcast
+            await destination.send(message)
             await interaction.followup.send(
-                f"🤫 **Secret Output:** Transmission successfully deployed to {target_channel.mention}!", 
+                f"🤫 **Secret Output:** Transmission successfully deployed to {destination.mention}!", 
                 ephemeral=True
             )
         except discord.Forbidden:
             await interaction.followup.send(
-                f"❌ Security Block: Lacking permissions to transmit in {target_channel.mention}.", 
+                f"❌ Security Block: Lacking permissions to transmit in {destination.mention}.", 
                 ephemeral=True
             )
         except Exception as e:
@@ -259,4 +250,4 @@ class Moderation(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
-        
+    
