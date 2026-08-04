@@ -137,6 +137,13 @@ class EternityBot(commands.Bot):
             except Exception as e:
                 print(f"❌ Failed to load extension '{extension}': {e}")
 
+        # Auto-sync command tree on startup
+        try:
+            synced = await self.tree.sync()
+            print(f"✅ Auto-synced {len(synced)} slash commands globally!")
+        except Exception as e:
+            print(f"⚠️ Auto-sync exception: {e}")
+
 bot = EternityBot()
 
 # ==========================================
@@ -153,14 +160,15 @@ async def ping(ctx):
     await ctx.send(f"✨ Sparkling! Pong! My cosmic waves reached you in {latency}ms. Ready for action?")
 
 # ==========================================
-# CLEAN SYNC COMMAND (OWNER ONLY)
+# INSTANT GUILD & GLOBAL SYNC COMMAND
 # ==========================================
 @bot.command(name='sync')
-async def sync(ctx, spec: Optional[Literal["clear"]] = None):
+async def sync(ctx, spec: Optional[Literal["clear", "global"]] = None):
     """
-    Syncs slash commands cleanly without duplicates.
-    ?sync -> Syncs commands globally.
-    ?sync clear -> Clears server-specific duplicates.
+    Syncs slash commands cleanly with instant guild propagation.
+    ?sync        -> Instantly syncs commands to current server.
+    ?sync global -> Performs global sync (takes up to 1 hr across Discord).
+    ?sync clear  -> Clears server-specific duplicates.
     """
     if ctx.author.id != OWNER_ID:
         return await ctx.send("❌ Security alert: You do not have permission to run this command.")
@@ -169,18 +177,28 @@ async def sync(ctx, spec: Optional[Literal["clear"]] = None):
         return await ctx.send("❌ Please run this command inside a server channel, not in DMs!")
 
     if spec == "clear":
-        await ctx.send("🧹 Clearing duplicate server commands...")
+        await ctx.send("🧹 Clearing server-specific cached commands...")
         bot.tree.clear_commands(guild=ctx.guild)
         await bot.tree.sync(guild=ctx.guild)
-        return await ctx.send("✨ Server duplicates cleared! Now run `?sync` once.")
+        return await ctx.send("✨ Server cache cleared! Run `?sync` now to re-register.")
 
-    await ctx.send("🔄 Syncing clean commands globally...")
-    
+    if spec == "global":
+        await ctx.send("🌐 Syncing clean commands globally...")
+        try:
+            synced = await bot.tree.sync()
+            await ctx.send(f"✅ Synced **{len(synced)}** clean commands globally! (May take up to 1 hr to update everywhere)")
+        except Exception as e:
+            await ctx.send(f"❌ Global synchronization failed: {e}")
+        return
+
+    # Instant Guild Syncing (Default)
+    await ctx.send(f"🔄 Force-syncing slash commands directly to **{ctx.guild.name}**...")
     try:
-        synced = await bot.tree.sync()
-        await ctx.send(f"✅ Synced **{len(synced)}** clean commands globally! Check your `/` menu now.")
+        bot.tree.copy_global_to(guild=ctx.guild)
+        synced = await bot.tree.sync(guild=ctx.guild)
+        await ctx.send(f"✅ Successfully synced **{len(synced)}** slash commands INSTANTLY to this server! Refresh your Discord client (`Ctrl + R`).")
     except Exception as e:
-        await ctx.send(f"❌ Synchronization failed: {e}")
+        await ctx.send(f"❌ Guild synchronization failed: {e}")
 
 # ==========================================
 # MESSAGE EVENT HANDLING
@@ -282,4 +300,3 @@ async def on_message(message):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
-            
