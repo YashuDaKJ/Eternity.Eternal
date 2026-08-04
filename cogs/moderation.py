@@ -4,7 +4,7 @@ from discord import app_commands
 from datetime import timedelta
 
 # ==========================================
-# MODERATION COG MODULE
+# ETERNITY SECURITY & MODERATION COG
 # ==========================================
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -14,7 +14,7 @@ class Moderation(commands.Cog):
         """Validates if user is Admin or Moderator Role holder."""
         if interaction.user.id in self.bot.ADMIN_IDS:
             return True
-        if any(role.id == self.bot.MODERATOR_ROLE_ID for role in interaction.user.roles):
+        if any(role.id == getattr(self.bot, 'MODERATOR_ROLE_ID', None) for role in interaction.user.roles):
             return True
         return False
 
@@ -22,14 +22,49 @@ class Moderation(commands.Cog):
     # ADMIN EXCLUSIVE COVERT COPY COMMAND
     # ==========================================
     @app_commands.command(name="copy", description="Copies and transmits an exact message anonymously (Admin Only).")
-    @app_commands.describe(message="The exact text string to broadcast via the bot instance")
-    async def copy(self, interaction: discord.Interaction, message: str):
+    @app_commands.describe(
+        message="The exact text string to broadcast via the bot instance",
+        channel_name="Target channel name, mention, or ID (Optional)"
+    )
+    async def copy(self, interaction: discord.Interaction, message: str, channel_name: str = None):
         if interaction.user.id not in self.bot.ADMIN_IDS:
             await interaction.response.send_message("❌ Security alert: Authorization failure.", ephemeral=True)
             return
 
-        await interaction.channel.send(message)
-        await interaction.response.send_message("✅ Transmission successfully deployed.", ephemeral=True)
+        # Response is ephemeral so status feedback is visible ONLY to you
+        await interaction.response.defer(ephemeral=True)
+
+        target_channel = interaction.channel
+
+        if channel_name:
+            clean_name = channel_name.strip("<#> ").lower()
+            found_channel = discord.utils.find(
+                lambda c: c.name.lower() == clean_name or str(c.id) == clean_name, 
+                interaction.guild.text_channels
+            )
+
+            if found_channel:
+                target_channel = found_channel
+            else:
+                await interaction.followup.send(
+                    f"❌ **Target Unresolved:** Could not find a text channel matching `{channel_name}`.", 
+                    ephemeral=True
+                )
+                return
+
+        try:
+            await target_channel.send(message)
+            await interaction.followup.send(
+                f"🤫 **Secret Output:** Transmission successfully deployed to {target_channel.mention}!", 
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.followup.send(
+                f"❌ Security Block: Lacking permissions to transmit in {target_channel.mention}.", 
+                ephemeral=True
+            )
+        except Exception as e:
+            await interaction.followup.send(f"❌ Systems Error: Transmission failed: {str(e)}", ephemeral=True)
 
     # ==========================================
     # PUBLIC PLAYER UTILITIES
@@ -129,6 +164,24 @@ class Moderation(commands.Cog):
         embed.add_field(name="Reason Logged", value=reason, inline=False)
         
         await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="unmute", description="Removes communication suppression matrix from an element")
+    @app_commands.describe(target="Target user node to lift restriction from", reason="Reason logging input")
+    async def unmute(self, interaction: discord.Interaction, target: discord.Member, reason: str = "Suppression lifted."):
+        if not self._is_authorized(interaction):
+            await interaction.response.send_message("❌ Security protocols alert: You lack administrative rights.", ephemeral=True)
+            return
+
+        try:
+            await target.timeout(None, reason=reason)
+            embed = discord.Embed(title="🔊 Communication Vector Restored", color=discord.Color.green())
+            embed.add_field(name="Target User", value=target.mention, inline=True)
+            embed.add_field(name="Status Matrix", value="Timeout Lifted", inline=True)
+            embed.add_field(name="Reason Logged", value=reason, inline=False)
+            
+            await interaction.response.send_message(embed=embed)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Systems Error: Unmute protocol failed: {str(e)}", ephemeral=True)
 
     @app_commands.command(name="clear", description="Purges a specific quantity of transmission frames from channel")
     @app_commands.describe(amount="Number of network message logs to erase")
