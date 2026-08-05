@@ -21,15 +21,15 @@ class Moderation(commands.Cog):
     # ==========================================
     # ADMIN EXCLUSIVE COVERT COPY COMMAND
     # ==========================================
-    @app_commands.command(name="copy", description="Copies and transmits an exact message anonymously (Admin Only).")
+    @app_commands.command(name="copy", description="Copies raw text or an existing message (with files & reactions) anonymously.")
     @app_commands.describe(
-        message="The exact text string to broadcast via the bot instance",
+        message_input="Enter raw text to broadcast OR a Message ID to fetch and clone",
         target_channel="Target text channel to send to (Optional - defaults to current channel)"
     )
     async def copy(
         self, 
         interaction: discord.Interaction, 
-        message: str, 
+        message_input: str, 
         target_channel: discord.TextChannel = None
     ):
         # 1. Admin restricted: Only user IDs in ADMIN_IDS can execute
@@ -43,12 +43,40 @@ class Moderation(commands.Cog):
         destination = target_channel or interaction.channel
 
         try:
-            # 3. Cross-channel broadcast
-            await destination.send(message)
-            await interaction.followup.send(
-                f"🤫 **Secret Output:** Transmission successfully deployed to {destination.mention}!", 
-                ephemeral=True
-            )
+            # 3. Check if input is a Message ID
+            if message_input.strip().isdigit():
+                msg_id = int(message_input.strip())
+                original_msg = await interaction.channel.fetch_message(msg_id)
+
+                # Clone Attachments
+                files = []
+                for attachment in original_msg.attachments:
+                    files.append(await attachment.to_file())
+
+                # Send message and attachments
+                new_msg = await destination.send(content=original_msg.content, files=files)
+
+                # Clone Reactions
+                for reaction in original_msg.reactions:
+                    try:
+                        await new_msg.add_reaction(reaction.emoji)
+                    except discord.HTTPException:
+                        pass
+
+                await interaction.followup.send(
+                    f"🤫 **Secret Output:** Cloned message `{msg_id}` (with attachments & reactions) to {destination.mention}!", 
+                    ephemeral=True
+                )
+            else:
+                # Direct Text Transmission
+                await destination.send(content=message_input)
+                await interaction.followup.send(
+                    f"🤫 **Secret Output:** Transmission successfully deployed to {destination.mention}!", 
+                    ephemeral=True
+                )
+
+        except discord.NotFound:
+            await interaction.followup.send(f"❌ Systems Error: Message ID `{message_input}` not found in this channel.", ephemeral=True)
         except discord.Forbidden:
             await interaction.followup.send(
                 f"❌ Security Block: Lacking permissions to transmit in {destination.mention}.", 
@@ -250,4 +278,4 @@ class Moderation(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
-    
+                          
