@@ -21,15 +21,17 @@ class Moderation(commands.Cog):
     # ==========================================
     # ADMIN EXCLUSIVE COVERT COPY COMMAND
     # ==========================================
-    @app_commands.command(name="copy", description="Copies raw text or an existing message (with files & reactions) anonymously.")
+    @app_commands.command(name="copy", description="Copies raw text or replies/clones an existing message anonymously.")
     @app_commands.describe(
-        message_input="Enter raw text to broadcast OR a Message ID to fetch and clone",
+        message_input="Enter raw text to broadcast OR a Message ID to target",
+        reply_text="Optional text to reply directly to the target Message ID",
         target_channel="Target text channel to send to (Optional - defaults to current channel)"
     )
     async def copy(
         self, 
         interaction: discord.Interaction, 
         message_input: str, 
+        reply_text: str = None,
         target_channel: discord.TextChannel = None
     ):
         # 1. Admin restricted: Only user IDs in ADMIN_IDS can execute
@@ -48,25 +50,28 @@ class Moderation(commands.Cog):
                 msg_id = int(message_input.strip())
                 original_msg = await interaction.channel.fetch_message(msg_id)
 
-                # Clone Attachments
-                files = []
-                for attachment in original_msg.attachments:
-                    files.append(await attachment.to_file())
+                # IF YOU PROVIDED REPLY TEXT: Reply directly to that message
+                if reply_text:
+                    await original_msg.reply(reply_text)
+                    await interaction.followup.send(
+                        f"🤫 **Secret Output:** Replied to message `{msg_id}` in {interaction.channel.mention}!", 
+                        ephemeral=True
+                    )
+                # IF NO REPLY TEXT: Clone the message (with files & reactions)
+                else:
+                    files = [await attachment.to_file() for attachment in original_msg.attachments]
+                    new_msg = await destination.send(content=original_msg.content, files=files)
 
-                # Send message and attachments
-                new_msg = await destination.send(content=original_msg.content, files=files)
+                    for reaction in original_msg.reactions:
+                        try:
+                            await new_msg.add_reaction(reaction.emoji)
+                        except discord.HTTPException:
+                            pass
 
-                # Clone Reactions
-                for reaction in original_msg.reactions:
-                    try:
-                        await new_msg.add_reaction(reaction.emoji)
-                    except discord.HTTPException:
-                        pass
-
-                await interaction.followup.send(
-                    f"🤫 **Secret Output:** Cloned message `{msg_id}` (with attachments & reactions) to {destination.mention}!", 
-                    ephemeral=True
-                )
+                    await interaction.followup.send(
+                        f"🤫 **Secret Output:** Cloned message `{msg_id}` to {destination.mention}!", 
+                        ephemeral=True
+                    )
             else:
                 # Direct Text Transmission
                 await destination.send(content=message_input)
@@ -79,11 +84,11 @@ class Moderation(commands.Cog):
             await interaction.followup.send(f"❌ Systems Error: Message ID `{message_input}` not found in this channel.", ephemeral=True)
         except discord.Forbidden:
             await interaction.followup.send(
-                f"❌ Security Block: Lacking permissions to transmit in {destination.mention}.", 
+                f"❌ Security Block: Lacking permissions in {destination.mention}.", 
                 ephemeral=True
             )
         except Exception as e:
-            await interaction.followup.send(f"❌ Systems Error: Transmission failed: {str(e)}", ephemeral=True)
+            await interaction.followup.send(f"❌ Systems Error: Action failed: {str(e)}", ephemeral=True)
 
     # ==========================================
     # PUBLIC PLAYER UTILITIES
@@ -278,4 +283,4 @@ class Moderation(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
-                          
+    
