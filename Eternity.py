@@ -7,6 +7,8 @@ from threading import Thread
 from flask import Flask
 import requests
 import time
+import asyncio
+import random
 import motor.motor_asyncio
 from typing import Literal, Optional
 
@@ -45,11 +47,23 @@ Thread(target=self_ping_loop, daemon=True).start()
 # 2. LOAD ENVIRONMENT VARIABLES & CONFIG
 # ==========================================
 DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 MONGO_URI = os.getenv('MONGO_URI')
 OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))
 
-genai.configure(api_key=GEMINI_API_KEY)
+# Load all primary and fallback API keys
+API_KEYS = [
+    os.getenv('GEMINI_API_KEY'),
+    os.getenv('GEMINI_KEY_1'),
+    os.getenv('GEMINI_KEY_2')
+]
+# Filter out empty or missing keys
+API_KEYS = [k for k in API_KEYS if k]
+
+if not DISCORD_TOKEN:
+    raise ValueError("ETERNITY_TOKEN must be set!")
+
+if not API_KEYS:
+    raise ValueError("At least one GEMINI key (GEMINI_API_KEY, GEMINI_KEY_1, or GEMINI_KEY_2) must be set!")
 
 # ==========================================
 # 3. INITIALIZE DISCORD BOT
@@ -85,39 +99,70 @@ class EternityBot(commands.Bot):
         self.chat_cooldowns = {}
 
     async def get_gemini_response(self, user_message: str, user_id: int, attachment_data=None) -> str:
-        try:
-            if user_id not in self.conversation_history:
-                self.conversation_history[user_id] = []
+        if user_id not in self.conversation_history:
+            self.conversation_history[user_id] = []
 
-            combined_instructions = (
-                f"{self.SYSTEM_PROMPT}\n\n"
-                f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
-            )
+        combined_instructions = (
+            f"{self.SYSTEM_PROMPT}\n\n"
+            f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
+        )
 
-            model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
-                system_instruction=combined_instructions
-            )     
-            
-            if attachment_data:
-                response = model.generate_content([user_message, attachment_data])
-                return response.text
-                
+        # Prepare context payload
+        if attachment_data:
+            contents_payload = [user_message, attachment_data]
+        else:
+            self.conversation_history[user_id].append({"role": "user", "parts": [user_message]})
             if len(self.conversation_history[user_id]) > 15:
                 self.conversation_history[user_id] = self.conversation_history[user_id][-15:]
+            contents_payload = self.conversation_history[user_id]
 
-            self.conversation_history[user_id].append({"role": "user", "parts": [user_message]})
-            response = model.generate_content(self.conversation_history[user_id])
-            assistant_message = response.text
-            
-            self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
-            
-            return assistant_message
-        except Exception as e:
-            print(f"Error captured in Gemini Call: {e}")
-            if "429" in str(e) or "quota" in str(e).lower():
-                return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
-            return f"💠 *My cosmic core staggered under an unexpected distortion! Let us try that again shortly.*"
+        # Shuffle keys for load balancing
+        keys_to_try = API_KEYS.copy()
+        random.shuffle(keys_to_try)
+
+        for key in keys_to_try:
+            try:
+                genai.configure(api_key=key)
+                model = genai.GenerativeModel(
+                    model_name='gemini-2.5-flash',
+                    system_instruction=combined_instructions
+                )
+                
+                response = await asyncio.to_thread(
+                    model.generate_content, contents_payload
+                )
+                assistant_message = response.text
+                
+                if not attachment_data:
+                    self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
+                return assistant_message
+
+            except Exception as e:
+                error_str = str(e)
+                print(f"Error on current API key: {error_str}")
+                
+                if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
+                    print("⚠️ Quota hit. Attempting fallback to gemini-2.5-flash-lite...")
+                    try:
+                        lite_model = genai.GenerativeModel(
+                            model_name='gemini-2.5-flash-lite',
+                            system_instruction=combined_instructions
+                        )
+                        response = await asyncio.to_thread(
+                            lite_model.generate_content, contents_payload
+                        )
+                        assistant_message = response.text
+                        if not attachment_data:
+                            self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
+                        return assistant_message
+                    except Exception as lite_err:
+                        print(f"Flash-Lite fallback failed on this key: {lite_err}. Trying next key...")
+                        continue
+                else:
+                    # Break and return fallback message for non-quota errors
+                    break
+                    
+        return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
 
     async def setup_hook(self):
         initial_extensions = [
@@ -278,7 +323,8 @@ async def on_message(message):
                     try:
                         file_attachment = message.attachments[0]
                         if file_attachment.content_type:
-                            file_response = requests.get(file_attachment.url)
+                            # Use await asyncio.to_thread so file downloading doesn't block
+                            file_response = await asyncio.to_thread(requests.get, file_attachment.url)
                             attachment_data = {
                                 'mime_type': file_attachment.content_type,
                                 'data': file_response.content
