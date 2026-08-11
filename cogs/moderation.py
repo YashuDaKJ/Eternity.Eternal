@@ -90,13 +90,19 @@ class Moderation(commands.Cog):
     # ==========================================
     # DATABASE MANAGEMENT COMMANDS
     # ==========================================
-    @app_commands.command(name="add_log", description="Manually create a moderation database log for a user")
+    @app_commands.command(name="add_log", description="Create a general or user-specific database log")
     @app_commands.describe(
-        target="The user to log in the database",
-        topic="The category (e.g., Spam, Exploiting, Disrespect)",
-        reason="Detailed explanation of the incident"
+        topic="The category name (e.g., Rules, GeneralNotes, Coords)",
+        reason="The data, text, or information you want to store",
+        target="Optional: Tag a user if this record belongs to someone"
     )
-    async def add_log(self, interaction: discord.Interaction, target: discord.Member, topic: str, reason: str):
+    async def add_log(
+        self, 
+        interaction: discord.Interaction, 
+        topic: str, 
+        reason: str, 
+        target: discord.Member = None
+    ):
         if not self._is_authorized(interaction):
             await interaction.response.send_message("❌ Security alert: You lack administrative rights.", ephemeral=True)
             return
@@ -106,31 +112,32 @@ class Moderation(commands.Cog):
             return
 
         collection = self.bot.db["moderation_logs"]
-        case_id = int(discord.utils.utcnow().timestamp()) # Generates a unique numeric ID based on time
+        case_id = int(discord.utils.utcnow().timestamp())
 
         log_data = {
             "case_id": case_id,
-            "user_id": target.id,
+            "user_id": target.id if target else None,
             "mod_id": interaction.user.id,
             "topic": topic.strip().lower(),
             "reason": reason,
             "timestamp": datetime.utcnow()
         }
 
-        # Handle both Async (Motor) and Sync (PyMongo) insertions
+        # Async (Motor) aur Sync (PyMongo) dono ke liye insertion handling
         try:
             await collection.insert_one(log_data)
         except TypeError:
             collection.insert_one(log_data)
 
-        embed = discord.Embed(title="✅ Database Log Created", color=discord.Color.green())
-        embed.add_field(name="Target User", value=target.mention, inline=True)
+        embed = discord.Embed(title="✅ Database Record Saved", color=discord.Color.green())
         embed.add_field(name="Category/Topic", value=topic.title(), inline=True)
-        embed.add_field(name="Case ID", value=f"`#{case_id}`", inline=True)
-        embed.add_field(name="Reason", value=reason, inline=False)
+        embed.add_field(name="Target User", value=target.mention if target else "None (General Note)", inline=True)
+        embed.add_field(name="Record ID", value=f"`#{case_id}`", inline=True)
+        embed.add_field(name="Content/Data", value=reason, inline=False)
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
-
+        
+    
     @app_commands.command(name="browse_categories", description="Browse all registered data categories/topics via a menu")
     async def browse_categories(self, interaction: discord.Interaction):
         if not self._is_authorized(interaction):
