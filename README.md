@@ -4,7 +4,7 @@
 
 # 🌌 Eternity — Advanced Faction Security & Moderation Core
 
-**Eternity** is an enterprise-grade automated security, intelligence, and moderation infrastructure engineered specifically to protect and govern the **Eternal** faction ecosystem. Built on robust asynchronous Python architectures, Eternity fuses deterministic moderation protocols with deep contextual intelligence powered by Google’s **Gemini 2.5 Flash** API.
+**Eternity** is an enterprise-grade automated security, intelligence, and moderation infrastructure engineered specifically to protect and govern the **Eternal** faction ecosystem. Built on robust asynchronous Python architectures, Eternity fuses deterministic moderation protocols with deep contextual intelligence powered by Google’s **Gemini 2.5 Flash** API and high-performance MongoDB persistent storage.
 
 The system relies on a dynamic, modular Cogs framework (`moderation.py`, `utilities.py`, `reactions.py`) to guarantee low-latency execution, structural isolation, and 24/7 autonomous uptime.
 
@@ -14,8 +14,9 @@ The system relies on a dynamic, modular Cogs framework (`moderation.py`, `utilit
 
 * **Modular Cogs Design:** Decoupled functional logic maintaining a clean, scalable event loop across utility, enforcement, and reaction matrices.
 * **Contextual Neural Intelligence:** Leverages Gemini 2.5 Flash for dynamic conversation handling, policy interpretation, and automated threat reasoning.
+* **Persistent Database Integration:** MongoDB back-end support for structured moderation logging, case tracking, and general faction record-keeping.
 * **Native Vision & Media Processing:** Direct ingestion and scanning of image assets and multimedia attachments within active operational channels.
-* **Interactive UI Elements:** Features fully interactive Discord Dropdown Menus (`discord.ui.Select`) for streamlined command navigation.
+* **Interactive UI Elements:** Features fully interactive Discord Dropdown Menus (`discord.ui.Select`) for streamlined command navigation and record browsing.
 * **Optimized Command Trees:** Synchronized dual-interface supporting modern Discord Application Slash Commands (`/`) alongside fallback administrative prefixes (`?`). Features built-in duplicate-clearing technology (`?sync clear`).
 * **Continuous Uptime Framework:** Embedded lightweight Flask web server integrated with a background heartbeat thread to maintain 24/7 container liveness on cloud hosting environments.
 
@@ -36,9 +37,12 @@ Operations are primarily executed via secure Discord Slash Commands (`/`), backe
 | `/report` | `target`, `reason` | Submits a formal, logged player violation report to the administration. |
 | `?ping` | None | Evaluates real-time gateway latency between the framework and Discord clusters. |
 
-### 🚨 Administrative & Moderation Protocols
+### 🚨 Administrative, Moderation & Database Protocols
 | Command | Parameters | Auth Level | Description |
 | :--- | :--- | :--- | :--- |
+| `/add_log` | `topic`, `reason`, `[target]` | Moderator+ | Creates a persistent database entry/log for general notes or a target user. |
+| `/browse_categories` | None | Moderator+ | Launches an interactive dropdown UI to browse stored topics and logs. |
+| `/search_logs` | `topic`, `[target]`, `[is_public]` | Moderator+ | Queries database records with optional user filtering and visibility toggles. |
 | `/warn` | `target`, `reason` | Moderator+ | Issues a formal structural violation warning to a designated member. |
 | `/timeout`| `target`, `minutes`, `reason` | Moderator+ | Enforces temporary communication suppression (Mute) on an element. |
 | `/clear` | `amount` | Moderator+ | Purges specified message frames from the active channel buffer (1–100). |
@@ -46,7 +50,7 @@ Operations are primarily executed via secure Discord Slash Commands (`/`), backe
 | `/ban` | `target`, `reason` | Administrator | Permanently revokes network and server access for a high-risk entity. |
 | `/unban` | `user_id`, `reason` | Administrator | Restores access authorization to a previously archived Snowflake ID. |
 | `/behave` | `target`, `rule` | Administrator | Directs explicit behavioral compliance protocol toward an individual. |
-| `?copy` | `message` | Administrator | Covertly broadcasts an exact text string via the bot's system node. |
+| `/copy` | `message_input`, `[reply_text]`, `[target_channel]` | Administrator | Covertly broadcasts text or clones existing channel messages anonymously. |
 | `?sync` | `[clear]` | Administrator | Reconciles and synchronizes application command trees globally. |
 
 ---
