@@ -1,4 +1,5 @@
 import os
+import sys
 import discord
 from discord.ext import commands
 import google.generativeai as genai
@@ -159,7 +160,6 @@ class EternityBot(commands.Bot):
                         print(f"Flash-Lite fallback failed on this key: {lite_err}. Trying next key...")
                         continue
                 else:
-                    # Break and return fallback message for non-quota errors
                     break
                     
         return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
@@ -204,17 +204,8 @@ async def ping(ctx):
     latency = round(bot.latency * 1000)
     await ctx.send(f"✨ Sparkling! Pong! My cosmic waves reached you in {latency}ms. Ready for action?")
 
-# ==========================================
-# INSTANT GUILD & GLOBAL SYNC COMMAND
-# ==========================================
 @bot.command(name='sync')
 async def sync(ctx, spec: Optional[Literal["clear", "global"]] = None):
-    """
-    Syncs slash commands cleanly with instant guild propagation.
-    ?sync        -> Instantly syncs commands to current server.
-    ?sync global -> Performs global sync (takes up to 1 hr across Discord).
-    ?sync clear  -> Clears server-specific duplicates.
-    """
     if ctx.author.id != OWNER_ID:
         return await ctx.send("❌ Security alert: You do not have permission to run this command.")
 
@@ -236,7 +227,6 @@ async def sync(ctx, spec: Optional[Literal["clear", "global"]] = None):
             await ctx.send(f"❌ Global synchronization failed: {e}")
         return
 
-    # Instant Guild Syncing (Default)
     await ctx.send(f"🔄 Force-syncing slash commands directly to **{ctx.guild.name}**...")
     try:
         bot.tree.copy_global_to(guild=ctx.guild)
@@ -323,7 +313,6 @@ async def on_message(message):
                     try:
                         file_attachment = message.attachments[0]
                         if file_attachment.content_type:
-                            # Use await asyncio.to_thread so file downloading doesn't block
                             file_response = await asyncio.to_thread(requests.get, file_attachment.url)
                             attachment_data = {
                                 'mime_type': file_attachment.content_type,
@@ -344,5 +333,17 @@ async def on_message(message):
                 if not message.attachments:
                     await message.reply("✨ The incoming frequency appears empty!", mention_author=False)
 
+# Safe Gateway Connection Handling
 if __name__ == "__main__":
-    bot.run(DISCORD_TOKEN)
+    print("🚀 Connecting Eternity Gateway...")
+    try:
+        bot.run(DISCORD_TOKEN)
+    except discord.errors.HTTPException as e:
+        if e.status == 429:
+            print("⚠️ DISCORD 429 RATE LIMIT ENCOUNTERED! Pausing process for 120s...")
+            time.sleep(120)
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ ETERNITY LAUNCH CRASH: {e}")
+        sys.exit(1)
+            
