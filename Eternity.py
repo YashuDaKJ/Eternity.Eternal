@@ -34,10 +34,13 @@ def self_ping_loop():
         
     while True:
         try:
-            requests.get(url)
+            # Added timeout to prevent thread from hanging and spamming logs
+            requests.get(url, timeout=10)
             print("🌌 Eternity Heartbeat: Faction protection core is awake!")
         except Exception as e:
             print(f"Heartbeat loop tick: {e}")
+        
+        # Ensures it only pings every 4 minutes (240 seconds)
         time.sleep(240)
 
 # Fire up background infrastructure
@@ -124,8 +127,10 @@ class EternityBot(commands.Bot):
         for key in keys_to_try:
             try:
                 genai.configure(api_key=key)
+                
+                # 🚀 UPDATED TO GEMINI 3.6 FLASH 🚀
                 model = genai.GenerativeModel(
-                    model_name='gemini-2.5-flash',
+                    model_name='gemini-3.6-flash',
                     system_instruction=combined_instructions
                 )
                 
@@ -143,10 +148,11 @@ class EternityBot(commands.Bot):
                 print(f"Error on current API key: {error_str}")
                 
                 if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
-                    print("⚠️ Quota hit. Attempting fallback to gemini-2.5-flash-lite...")
+                    print("⚠️ Quota hit. Attempting fallback to gemini-3.6-flash-lite...")
                     try:
+                        # 🚀 UPDATED FALLBACK TO 3.6 LITE 🚀
                         lite_model = genai.GenerativeModel(
-                            model_name='gemini-2.5-flash-lite',
+                            model_name='gemini-3.6-flash-lite',
                             system_instruction=combined_instructions
                         )
                         response = await asyncio.to_thread(
@@ -346,4 +352,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ ETERNITY LAUNCH CRASH: {e}")
         sys.exit(1)
-            
