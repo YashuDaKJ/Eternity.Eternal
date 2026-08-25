@@ -12,6 +12,7 @@ import random
 import certifi
 import aiohttp
 import motor.motor_asyncio
+from threading import Thread
 from typing import Literal, Optional
 
 # Global Headers for web requests
@@ -20,7 +21,7 @@ DEFAULT_HEADERS = {
 }
 
 # ==========================================
-# 1. SETUP FLASK SERVER FOR GUNICORN
+# 1. SETUP FLASK SERVER FOR RENDER PORT BINDING
 # ==========================================
 app = Flask('')
 
@@ -28,8 +29,13 @@ app = Flask('')
 def home():
     return "Eternity is online, glowing, and protecting the faction 24/7!"
 
-# REMOVED: Thread(target=run_web_server) & self_ping_loop removed.
-# Gunicorn handles Flask port 10000, and UptimeRobot handles the external keep-alive ping.
+def run_web_server():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+
+# Background thread starts Flask before bot connection
+server_thread = Thread(target=run_web_server, daemon=True)
+server_thread.start()
 
 # ==========================================
 # 2. LOAD ENVIRONMENT VARIABLES & CONFIG
