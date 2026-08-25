@@ -11,4 +11,6 @@ pymongo[srv]
 motor
 certifi
 aiodns
-cchardet
+faust-cchardet
+charset-normalizer
+
