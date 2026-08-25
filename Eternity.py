@@ -2,6 +2,7 @@ import os
 import sys
 import discord
 from discord.ext import commands
+from discord import app_commands
 import google.generativeai as genai
 import core_data as faction_data
 from threading import Thread
@@ -34,13 +35,11 @@ def self_ping_loop():
         
     while True:
         try:
-            # Added timeout to prevent thread from hanging and spamming logs
             requests.get(url, timeout=10)
             print("🌌 Eternity Heartbeat: Faction protection core is awake!")
         except Exception as e:
             print(f"Heartbeat loop tick: {e}")
         
-        # Ensures it only pings every 4 minutes (240 seconds)
         time.sleep(240)
 
 # Fire up background infrastructure
@@ -60,7 +59,6 @@ API_KEYS = [
     os.getenv('GEMINI_KEY_1'),
     os.getenv('GEMINI_KEY_2')
 ]
-# Filter out empty or missing keys
 API_KEYS = [k for k in API_KEYS if k]
 
 if not DISCORD_TOKEN:
@@ -81,13 +79,11 @@ class EternityBot(commands.Bot):
         super().__init__(command_prefix='?', intents=intents)
         self.SPECIAL_CHANNEL_ID = 1500095634588569600
         
-        # Access Matrix Controls
         self.ADMIN_IDS = [1477528681709830297]
         self.MODERATOR_ROLE_ID = 1485660896746541259
         
         self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
         
-        # Initialize Database connection variables
         if not MONGO_URI:
             print("⚠️ WARNING: MONGO_URI environment variable is missing! Database features will fail.")
             self.db_client = None
@@ -111,7 +107,6 @@ class EternityBot(commands.Bot):
             f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
         )
 
-        # Prepare context payload
         if attachment_data:
             contents_payload = [user_message, attachment_data]
         else:
@@ -120,15 +115,12 @@ class EternityBot(commands.Bot):
                 self.conversation_history[user_id] = self.conversation_history[user_id][-15:]
             contents_payload = self.conversation_history[user_id]
 
-        # Shuffle keys for load balancing
         keys_to_try = API_KEYS.copy()
         random.shuffle(keys_to_try)
 
         for key in keys_to_try:
             try:
                 genai.configure(api_key=key)
-                
-                # 🚀 UPDATED TO GEMINI 3.6 FLASH 🚀
                 model = genai.GenerativeModel(
                     model_name='gemini-3.6-flash',
                     system_instruction=combined_instructions
@@ -150,7 +142,6 @@ class EternityBot(commands.Bot):
                 if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
                     print("⚠️ Quota hit. Attempting fallback to gemini-3.6-flash-lite...")
                     try:
-                        # 🚀 UPDATED FALLBACK TO 3.6 LITE 🚀
                         lite_model = genai.GenerativeModel(
                             model_name='gemini-3.6-flash-lite',
                             system_instruction=combined_instructions
@@ -188,14 +179,24 @@ class EternityBot(commands.Bot):
             except Exception as e:
                 print(f"❌ Failed to load extension '{extension}': {e}")
 
-        # Auto-sync command tree on startup
-        try:
-            synced = await self.tree.sync()
-            print(f"✅ Auto-synced {len(synced)} slash commands globally!")
-        except Exception as e:
-            print(f"⚠️ Auto-sync exception: {e}")
+        # 🛑 AUTO-SYNC DISABLED TO PREVENT DISCORD 429 BOOT LOOPS 🛑
+        # try:
+        #     synced = await self.tree.sync()
+        #     print(f"✅ Auto-synced {len(synced)} slash commands globally!")
+        # except Exception as e:
+        #     print(f"⚠️ Auto-sync exception: {e}")
 
 bot = EternityBot()
+
+# Global Error Handler for Slash Commands to catch rate limits safely
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandInvokeError):
+        original = error.original
+        if isinstance(original, discord.errors.HTTPException) and original.status == 429:
+            print(f"⚠️ 429 Blocked on /{interaction.command.name}: Discord API rate limit hit.")
+            return
+    print(f"❌ Command Error in /{interaction.command.name}: {error}")
 
 # ==========================================
 # 4. BOT EVENTS & COMMANDS
@@ -305,39 +306,44 @@ async def on_message(message):
         
         bot.chat_cooldowns[user_id] = current_time
 
-        async with message.channel.typing():
-            clean_message = message.content.replace(f'<@{bot.user.id}>', '').replace(f'<@!{bot.user.id}>', '').strip()
-            
-            if not clean_message and is_gif:
-                clean_message = "Scan this GIF asset I sent you!"
-            elif not clean_message and message.attachments:
-                clean_message = "Scan this asset!"
-            
-            if clean_message:
-                attachment_data = None
-                if message.attachments:
-                    try:
-                        file_attachment = message.attachments[0]
-                        if file_attachment.content_type:
-                            file_response = await asyncio.to_thread(requests.get, file_attachment.url)
-                            attachment_data = {
-                                'mime_type': file_attachment.content_type,
-                                'data': file_response.content
-                            }
-                    except Exception as err:
-                        print(f"Vision direct parse warning: {err}")
+        # Safe Typing block to prevent crashes if Discord blocks typing status
+        try:
+            async with message.channel.typing():
+                clean_message = message.content.replace(f'<@{bot.user.id}>', '').replace(f'<@!{bot.user.id}>', '').strip()
                 
-                response = await bot.get_gemini_response(clean_message, message.author.id, attachment_data)
+                if not clean_message and is_gif:
+                    clean_message = "Scan this GIF asset I sent you!"
+                elif not clean_message and message.attachments:
+                    clean_message = "Scan this asset!"
                 
-                if len(response) > 2000:
-                    chunks = [response[i:i+1900] for i in range(0, len(response), 1900)]
-                    for chunk in chunks:
-                        await message.reply(chunk, mention_author=False)
+                if clean_message:
+                    attachment_data = None
+                    if message.attachments:
+                        try:
+                            file_attachment = message.attachments[0]
+                            if file_attachment.content_type:
+                                file_response = await asyncio.to_thread(requests.get, file_attachment.url)
+                                attachment_data = {
+                                    'mime_type': file_attachment.content_type,
+                                    'data': file_response.content
+                                }
+                        except Exception as err:
+                            print(f"Vision direct parse warning: {err}")
+                    
+                    response = await bot.get_gemini_response(clean_message, message.author.id, attachment_data)
+                    
+                    if len(response) > 2000:
+                        chunks = [response[i:i+1900] for i in range(0, len(response), 1900)]
+                        for chunk in chunks:
+                            await message.reply(chunk, mention_author=False)
+                    else:
+                        await message.reply(response, mention_author=False)
                 else:
-                    await message.reply(response, mention_author=False)
-            else:
-                if not message.attachments:
-                    await message.reply("✨ The incoming frequency appears empty!", mention_author=False)
+                    if not message.attachments:
+                        await message.reply("✨ The incoming frequency appears empty!", mention_author=False)
+        except discord.errors.HTTPException as typing_err:
+            if typing_err.status == 429:
+                print("⚠️ Typing indicator blocked by Discord rate limit (429). Skipped typing status.")
 
 # Safe Gateway Connection Handling
 if __name__ == "__main__":
@@ -352,3 +358,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ ETERNITY LAUNCH CRASH: {e}")
         sys.exit(1)
+        
