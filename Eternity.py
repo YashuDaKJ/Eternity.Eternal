@@ -5,17 +5,22 @@ from discord.ext import commands
 from discord import app_commands
 import google.generativeai as genai
 import core_data as faction_data
-from threading import Thread
 from flask import Flask
-import requests
 import time
 import asyncio
 import random
+import certifi
+import aiohttp
 import motor.motor_asyncio
 from typing import Literal, Optional
 
+# Global Headers for web requests
+DEFAULT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
 # ==========================================
-# 1. SETUP FLASK SERVER & HEARTBEAT ENGINE
+# 1. SETUP FLASK SERVER FOR GUNICORN
 # ==========================================
 app = Flask('')
 
@@ -23,28 +28,8 @@ app = Flask('')
 def home():
     return "Eternity is online, glowing, and protecting the faction 24/7!"
 
-def run_web_server():
-    port = int(os.getenv("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-
-def self_ping_loop():
-    time.sleep(30)
-    url = os.getenv("RENDER_EXTERNAL_URL")
-    if not url:
-        url = f"http://localhost:{os.getenv('PORT', 10000)}/"
-        
-    while True:
-        try:
-            requests.get(url, timeout=10)
-            print("🌌 Eternity Heartbeat: Faction protection core is awake!")
-        except Exception as e:
-            print(f"Heartbeat loop tick: {e}")
-        
-        time.sleep(240)
-
-# Fire up background infrastructure
-Thread(target=run_web_server, daemon=True).start()
-Thread(target=self_ping_loop, daemon=True).start()
+# REMOVED: Thread(target=run_web_server) & self_ping_loop removed.
+# Gunicorn handles Flask port 10000, and UptimeRobot handles the external keep-alive ping.
 
 # ==========================================
 # 2. LOAD ENVIRONMENT VARIABLES & CONFIG
@@ -53,7 +38,6 @@ DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
 OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))
 
-# Load all primary and fallback API keys
 API_KEYS = [
     os.getenv('GEMINI_API_KEY'),
     os.getenv('GEMINI_KEY_1'),
@@ -65,7 +49,7 @@ if not DISCORD_TOKEN:
     raise ValueError("ETERNITY_TOKEN must be set!")
 
 if not API_KEYS:
-    raise ValueError("At least one GEMINI key (GEMINI_API_KEY, GEMINI_KEY_1, or GEMINI_KEY_2) must be set!")
+    raise ValueError("At least one GEMINI key must be set!")
 
 # ==========================================
 # 3. INITIALIZE DISCORD BOT
@@ -83,20 +67,54 @@ class EternityBot(commands.Bot):
         self.MODERATOR_ROLE_ID = 1485660896746541259
         
         self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
-        
-        if not MONGO_URI:
-            print("⚠️ WARNING: MONGO_URI environment variable is missing! Database features will fail.")
-            self.db_client = None
-            self.db = None
-            self.profiles = None
-        else:
-            self.db_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
-            self.db = self.db_client["eternal_faction_db"]
-            self.profiles = self.db["user_profiles"]
-            print("🛰️ MongoDB Atlas Pipeline: Connected to ClusterEternal successfully!")
+        self.session = None
+        self.db_client = None
+        self.db = None
+        self.profiles = None
         
         self.conversation_history = {}
         self.chat_cooldowns = {}
+
+    async def setup_hook(self):
+        self.session = aiohttp.ClientSession(headers=DEFAULT_HEADERS)
+        
+        if not MONGO_URI:
+            print("⚠️ WARNING: MONGO_URI environment variable is missing!")
+        else:
+            try:
+                self.db_client = motor.motor_asyncio.AsyncIOMotorClient(
+                    MONGO_URI,
+                    tlsCAFile=certifi.where()
+                )
+                self.db = self.db_client["eternal_faction_db"]
+                self.profiles = self.db["user_profiles"]
+                print("🛰️ MongoDB Atlas Pipeline: Connected to ClusterEternal successfully!")
+            except Exception as e:
+                print(f"MongoDB Async Error: {e}")
+
+        initial_extensions = [
+            'cogs.moderation',
+            'cogs.reactions'
+        ]
+        
+        if os.path.exists("cogs/utility.py"):
+            initial_extensions.append('cogs.utility')
+        elif os.path.exists("cogs/utilities.py"):
+            initial_extensions.append('cogs.utilities')
+            
+        for extension in initial_extensions:
+            try:
+                await self.load_extension(extension)
+                print(f"⚡ Extension '{extension}' loaded successfully!")
+            except Exception as e:
+                print(f"❌ Failed to load extension '{extension}': {e}")
+
+    async def close(self):
+        if self.session:
+            await self.session.close()
+        if self.db_client:
+            self.db_client.close()
+        await super().close()
 
     async def get_gemini_response(self, user_message: str, user_id: int, attachment_data=None) -> str:
         if user_id not in self.conversation_history:
@@ -154,41 +172,16 @@ class EternityBot(commands.Bot):
                             self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
                         return assistant_message
                     except Exception as lite_err:
-                        print(f"Flash-Lite fallback failed on this key: {lite_err}. Trying next key...")
+                        print(f"Flash-Lite fallback failed: {lite_err}. Trying next key...")
                         continue
                 else:
                     break
                     
         return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
 
-    async def setup_hook(self):
-        initial_extensions = [
-            'cogs.moderation',
-            'cogs.reactions'
-        ]
-        
-        if os.path.exists("cogs/utility.py"):
-            initial_extensions.append('cogs.utility')
-        elif os.path.exists("cogs/utilities.py"):
-            initial_extensions.append('cogs.utilities')
-            
-        for extension in initial_extensions:
-            try:
-                await self.load_extension(extension)
-                print(f"⚡ Extension '{extension}' loaded successfully!")
-            except Exception as e:
-                print(f"❌ Failed to load extension '{extension}': {e}")
-
-        # 🛑 AUTO-SYNC DISABLED TO PREVENT DISCORD 429 BOOT LOOPS 🛑
-        # try:
-        #     synced = await self.tree.sync()
-        #     print(f"✅ Auto-synced {len(synced)} slash commands globally!")
-        # except Exception as e:
-        #     print(f"⚠️ Auto-sync exception: {e}")
-
 bot = EternityBot()
 
-# Global Error Handler for Slash Commands to catch rate limits safely
+# Global Error Handler for Slash Commands
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandInvokeError):
@@ -229,7 +222,7 @@ async def sync(ctx, spec: Optional[Literal["clear", "global"]] = None):
         await ctx.send("🌐 Syncing clean commands globally...")
         try:
             synced = await bot.tree.sync()
-            await ctx.send(f"✅ Synced **{len(synced)}** clean commands globally! (May take up to 1 hr to update everywhere)")
+            await ctx.send(f"✅ Synced **{len(synced)}** clean commands globally!")
         except Exception as e:
             await ctx.send(f"❌ Global synchronization failed: {e}")
         return
@@ -238,7 +231,7 @@ async def sync(ctx, spec: Optional[Literal["clear", "global"]] = None):
     try:
         bot.tree.copy_global_to(guild=ctx.guild)
         synced = await bot.tree.sync(guild=ctx.guild)
-        await ctx.send(f"✅ Successfully synced **{len(synced)}** slash commands INSTANTLY to this server! Refresh your Discord client (`Ctrl + R`).")
+        await ctx.send(f"✅ Successfully synced **{len(synced)}** slash commands INSTANTLY to this server!")
     except Exception as e:
         await ctx.send(f"❌ Guild synchronization failed: {e}")
 
@@ -254,7 +247,7 @@ async def on_message(message):
         if message.author.id != OWNER_ID:
             try:
                 await message.reply("🔒 Direct messages are disabled for AI processing. Please use the server channels!")
-            except:
+            except Exception:
                 pass
             return
     
@@ -267,7 +260,7 @@ async def on_message(message):
     if "eternal" in content_lower or "victory" in content_lower:
         try:
             await message.add_reaction("💠")
-        except:
+        except Exception:
             pass
 
     is_gif = "tenor.com" in content_lower or "giphy.com" in content_lower
@@ -285,7 +278,7 @@ async def on_message(message):
             replied_to = await message.channel.fetch_message(message.reference.message_id)
             if replied_to.author == bot.user:
                 is_pinged_or_replied = True
-        except:
+        except Exception:
             pass
 
     name_called = "eternity" in content_lower
@@ -300,13 +293,13 @@ async def on_message(message):
                 remaining = int(5 - elapsed)
                 try:
                     await message.reply(f"⏰ *Hold your energy, guardian! The cosmic core is cooling down. Wait {remaining}s.*", delete_after=3)
-                except:
+                except Exception:
                     pass
                 return
         
         bot.chat_cooldowns[user_id] = current_time
 
-        # Safe Typing block to prevent crashes if Discord blocks typing status
+        # Safe Typing block
         try:
             async with message.channel.typing():
                 clean_message = message.content.replace(f'<@{bot.user.id}>', '').replace(f'<@!{bot.user.id}>', '').strip()
@@ -318,15 +311,17 @@ async def on_message(message):
                 
                 if clean_message:
                     attachment_data = None
-                    if message.attachments:
+                    if message.attachments and bot.session:
                         try:
                             file_attachment = message.attachments[0]
                             if file_attachment.content_type:
-                                file_response = await asyncio.to_thread(requests.get, file_attachment.url)
-                                attachment_data = {
-                                    'mime_type': file_attachment.content_type,
-                                    'data': file_response.content
-                                }
+                                async with bot.session.get(file_attachment.url) as resp:
+                                    if resp.status == 200:
+                                        file_bytes = await resp.read()
+                                        attachment_data = {
+                                            'mime_type': file_attachment.content_type,
+                                            'data': file_bytes
+                                        }
                         except Exception as err:
                             print(f"Vision direct parse warning: {err}")
                     
