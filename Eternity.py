@@ -142,46 +142,41 @@ class EternityBot(commands.Bot):
         keys_to_try = API_KEYS.copy()
         random.shuffle(keys_to_try)
 
-        for key in keys_to_try:
-            try:
-                genai.configure(api_key=key)
-                model = genai.GenerativeModel(
-                    model_name='gemini-3.6-flash',
-                    system_instruction=combined_instructions
-                )
-                
-                response = await asyncio.to_thread(
-                    model.generate_content, contents_payload
-                )
-                assistant_message = response.text
-                
-                if not attachment_data:
-                    self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
-                return assistant_message
+        # Updated Official Model Names (No 404 models)
+        models_to_attempt = [
+            'models/gemini-3.6-flash',
+            'models/gemini-3.5-flash-lite'
+        ]
 
-            except Exception as e:
-                error_str = str(e)
-                print(f"Error on current API key: {error_str}")
-                
-                if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
-                    print("⚠️ Quota hit. Attempting fallback to gemini-3.5-flash-lite...")
-                    try:
-                        lite_model = genai.GenerativeModel(
-                            model_name='gemini-3.1-flash-lite',
-                            system_instruction=combined_instructions
-                        )
-                        response = await asyncio.to_thread(
-                            lite_model.generate_content, contents_payload
-                        )
-                        assistant_message = response.text
-                        if not attachment_data:
-                            self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
-                        return assistant_message
-                    except Exception as lite_err:
-                        print(f"Flash-Lite fallback failed: {lite_err}. Trying next key...")
+        for key in keys_to_try:
+            genai.configure(api_key=key)
+            for model_name in models_to_attempt:
+                try:
+                    model = genai.GenerativeModel(
+                        model_name=model_name,
+                        system_instruction=combined_instructions
+                    )
+                    
+                    response = await asyncio.to_thread(
+                        model.generate_content, contents_payload
+                    )
+                    assistant_message = response.text
+                    
+                    if not attachment_data:
+                        self.conversation_history[user_id].append({"role": "model", "parts": [assistant_message]})
+                    return assistant_message
+
+                except Exception as e:
+                    error_str = str(e)
+                    print(f"Error on current API key ({model_name}): {error_str}")
+                    
+                    # Quota Handling with Anti-Loop Sleep Delay
+                    if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
+                        print(f"⚠️ Quota hit on {model_name}. Pausing for 3 seconds before fallback...")
+                        await asyncio.sleep(3)
                         continue
-                else:
-                    break
+                    else:
+                        break
                     
         return "💠 *The cosmic frequencies are currently overloaded, my friends! Let the stars align and try again in a brief moment!*"
 
