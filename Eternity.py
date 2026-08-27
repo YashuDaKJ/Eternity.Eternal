@@ -164,10 +164,10 @@ class EternityBot(commands.Bot):
                 print(f"Error on current API key: {error_str}")
                 
                 if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
-                    print("⚠️ Quota hit. Attempting fallback to gemini-3.6-flash-lite...")
+                    print("⚠️ Quota hit. Attempting fallback to gemini-3.5-flash-lite...")
                     try:
                         lite_model = genai.GenerativeModel(
-                            model_name='gemini-3.6-flash-lite',
+                            model_name='gemini-3.1-flash-lite',
                             system_instruction=combined_instructions
                         )
                         response = await asyncio.to_thread(
