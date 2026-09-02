@@ -15,9 +15,6 @@ import motor.motor_asyncio
 from threading import Thread
 from typing import Literal, Optional
 
-# --- ENVIRONMENT VARIABLE SE CLOUDFLARE WORKER PROXY URL FETCH KAREIN ---
-WORKER_PROXY_URL = os.getenv('WORKER_PROXY_URL', 'https://morning-rain-5c30.aruntailor635.workers.dev')
-
 # Global Headers for web requests
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -69,15 +66,9 @@ intents.members = True
 
 class EternityBot(commands.Bot):
     def __init__(self):
-        # OVERRIDE DISCORD API BASE_URL VIA CLOUDFLARE PROXY
-        http_options = {
-            'base_url': WORKER_PROXY_URL
-        }
-        
         super().__init__(
             command_prefix='?', 
-            intents=intents,
-            http_options=http_options
+            intents=intents
         )
         
         self.SPECIAL_CHANNEL_ID = 1500095634588569600
@@ -155,7 +146,6 @@ class EternityBot(commands.Bot):
         keys_to_try = API_KEYS.copy()
         random.shuffle(keys_to_try)
 
-        # Aapke original model names
         models_to_attempt = [
             'models/gemini-3.6-flash',
             'models/gemini-3.5-flash-lite'
@@ -209,7 +199,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 # ==========================================
 @bot.event
 async def on_ready():
-    print(f'✨ {bot.user.name} is fully online and active via Cloudflare Worker Proxy!')
+    print(f'✨ {bot.user.name} is fully online and active!')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over Eternal"))
 
 @bot.command(name='ping')
@@ -354,7 +344,7 @@ async def on_message(message):
 
 # Safe Gateway Connection Handling
 if __name__ == "__main__":
-    print("🚀 Connecting Eternity Gateway via Cloudflare Worker Proxy...")
+    print("🚀 Connecting Eternity Gateway...")
     try:
         bot.run(DISCORD_TOKEN)
     except discord.errors.HTTPException as e:
