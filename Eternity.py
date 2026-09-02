@@ -1,27 +1,28 @@
 import os
 import sys
-import discord
-from discord.ext import commands
-from discord import app_commands
-import google.generativeai as genai
-import core_data as faction_data
-from flask import Flask
 import time
 import asyncio
 import random
 import certifi
 import aiohttp
-import motor.motor_asyncio
 from threading import Thread
 from typing import Literal, Optional
+from flask import Flask
 
-# Global Headers for web requests
+import discord
+from discord.ext import commands
+from discord import app_commands
+import google.generativeai as genai
+import motor.motor_asyncio
+
+import core_data as faction_data
+
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
 # ==========================================
-# 1. SETUP FLASK SERVER FOR RENDER PORT BINDING
+# 1. FLASK WEB SERVER FOR RENDER PORT BINDING
 # ==========================================
 app = Flask('')
 
@@ -31,16 +32,15 @@ def home():
 
 def run_web_server():
     port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
-# Background thread starts Flask before bot connection
 server_thread = Thread(target=run_web_server, daemon=True)
 server_thread.start()
 
 # ==========================================
 # 2. LOAD ENVIRONMENT VARIABLES & CONFIG
 # ==========================================
-DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN')
+DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN') or os.getenv('DISCORD_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
 OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))
 
@@ -52,10 +52,10 @@ API_KEYS = [
 API_KEYS = [k for k in API_KEYS if k]
 
 if not DISCORD_TOKEN:
-    raise ValueError("ETERNITY_TOKEN must be set!")
+    raise ValueError("ETERNITY_TOKEN or DISCORD_TOKEN must be set!")
 
 if not API_KEYS:
-    raise ValueError("At least one GEMINI key must be set!")
+    raise ValueError("At least one GEMINI API key must be set!")
 
 # ==========================================
 # 3. INITIALIZE DISCORD BOT
@@ -72,11 +72,10 @@ class EternityBot(commands.Bot):
         )
         
         self.SPECIAL_CHANNEL_ID = 1500095634588569600
-        
         self.ADMIN_IDS = [1477528681709830297]
         self.MODERATOR_ROLE_ID = 1485660896746541259
         
-        self.SYSTEM_PROMPT = faction_data.SYSTEM_PROMPT
+        self.SYSTEM_PROMPT = getattr(faction_data, 'SYSTEM_PROMPT', '')
         self.session = None
         self.db_client = None
         self.db = None
@@ -88,9 +87,7 @@ class EternityBot(commands.Bot):
     async def setup_hook(self):
         self.session = aiohttp.ClientSession(headers=DEFAULT_HEADERS)
         
-        if not MONGO_URI:
-            print("⚠️ WARNING: MONGO_URI environment variable is missing!")
-        else:
+        if MONGO_URI:
             try:
                 self.db_client = motor.motor_asyncio.AsyncIOMotorClient(
                     MONGO_URI,
@@ -102,11 +99,7 @@ class EternityBot(commands.Bot):
             except Exception as e:
                 print(f"MongoDB Async Error: {e}")
 
-        initial_extensions = [
-            'cogs.moderation',
-            'cogs.reactions'
-        ]
-        
+        initial_extensions = ['cogs.moderation', 'cogs.reactions']
         if os.path.exists("cogs/utility.py"):
             initial_extensions.append('cogs.utility')
         elif os.path.exists("cogs/utilities.py"):
@@ -132,7 +125,7 @@ class EternityBot(commands.Bot):
 
         combined_instructions = (
             f"{self.SYSTEM_PROMPT}\n\n"
-            f"Core Faction Knowledge Base:\n{faction_data.FACTION_PROMPT}"
+            f"Core Faction Knowledge Base:\n{getattr(faction_data, 'FACTION_PROMPT', '')}"
         )
 
         if attachment_data:
@@ -146,6 +139,7 @@ class EternityBot(commands.Bot):
         keys_to_try = API_KEYS.copy()
         random.shuffle(keys_to_try)
 
+        # EXACT ORIGINAL MODEL NAMES KEPT UNTOUCHED
         models_to_attempt = [
             'models/gemini-3.6-flash',
             'models/gemini-3.5-flash-lite'
@@ -246,13 +240,12 @@ async def on_message(message):
     if message.author.bot or message.mention_everyone:
         return
     
-    if message.guild is None:
-        if message.author.id != OWNER_ID:
-            try:
-                await message.reply("🔒 Direct messages are disabled for AI processing. Please use the server channels!")
-            except Exception:
-                pass
-            return
+    if message.guild is None and message.author.id != OWNER_ID:
+        try:
+            await message.reply("🔒 Direct messages are disabled for AI processing. Please use the server channels!")
+        except Exception:
+            pass
+        return
     
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
@@ -342,17 +335,26 @@ async def on_message(message):
             if typing_err.status == 429:
                 print("⚠️ Typing indicator blocked by Discord rate limit (429). Skipped typing status.")
 
-# Safe Gateway Connection Handling
+# ==========================================
+# 5. GATEWAY EXECUTION WITH RETRY BACKOFF
+# ==========================================
 if __name__ == "__main__":
     print("🚀 Connecting Eternity Gateway...")
-    try:
-        bot.run(DISCORD_TOKEN)
-    except discord.errors.HTTPException as e:
-        if e.status == 429:
-            print("⚠️ DISCORD 429 RATE LIMIT ENCOUNTERED! Pausing process for 120s...")
-            time.sleep(120)
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ ETERNITY LAUNCH CRASH: {e}")
-        sys.exit(1)
-                
+    max_retries = 5
+    retry_delay = 30
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            bot.run(DISCORD_TOKEN)
+            break
+        except discord.errors.HTTPException as e:
+            if e.status == 429:
+                print(f"⚠️ DISCORD 429 RATE LIMIT ENCOUNTERED (Attempt {attempt}/{max_retries})! Retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                print(f"❌ HTTP Error: {e}")
+                sys.exit(1)
+        except Exception as e:
+            print(f"❌ LAUNCH CRASH: {e}")
+            sys.exit(1)
