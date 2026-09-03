@@ -16,7 +16,7 @@ import google.generativeai as genai
 import motor.motor_asyncio
 
 # ==========================================
-# 0. FORCE UNBUFFERED STDOUT (so Render logs show real timestamps)
+# 0. FORCE UNBUFFERED STDOUT
 # ==========================================
 try:
     sys.stdout.reconfigure(line_buffering=True)
@@ -89,20 +89,8 @@ if not API_KEYS:
     raise ValueError("At least one GEMINI API key must be set!")
 
 # ==========================================
-# 2b. ACTUALLY WIRE UP THE PROXY (the old http_options kwarg did nothing)
+# 2b. ACTUALLY WIRE UP THE PROXY
 # ==========================================
-# NOTE: This patches discord.py's REST layer (discord.http.Route.BASE), so
-# normal API calls (fetching channels, sending messages, the initial
-# "get gateway url" call, etc.) go through your proxy.
-#
-# IMPORTANT CAVEAT: the actual Gateway WebSocket connection (the persistent
-# wss:// connection used for IDENTIFY/heartbeats/events) is opened directly
-# by discord.py using the URL Discord's API returns, and does NOT route
-# through Route.BASE. If your proxy needs to cover the websocket traffic
-# too (not just REST), it needs to be a WebSocket-capable proxy (e.g. a
-# Cloudflare Worker with Upgrade header handling), and you'd need to also
-# patch discord.gateway.DiscordWebSocket's connect URL. Ask if you want
-# that version — it's more involved and easier to get subtly wrong.
 if PROXY_URL:
     clean_proxy = PROXY_URL.rstrip('/')
     discord.http.Route.BASE = clean_proxy
@@ -193,9 +181,12 @@ class EternityBot(commands.Bot):
         keys_to_try = API_KEYS.copy()
         random.shuffle(keys_to_try)
 
+        # 3.x Models Priority List (Main: gemini-3.6-flash)
         models_to_attempt = [
-            'models/gemini-1.5-flash',
-            'models/gemini-1.5-pro'
+            'gemini-3.6-flash',
+            'gemini-3.5-flash-lite',
+            'gemini-2.5-flash',
+            'gemini-2.5-pro'
         ]
 
         for key in keys_to_try:
@@ -221,7 +212,7 @@ class EternityBot(commands.Bot):
                     log(f"Error on current API key ({model_name}): {error_str}")
 
                     if "429" in error_str or "quota" in error_str.lower() or "resource_exhausted" in error_str.lower():
-                        await asyncio.sleep(3)
+                        await asyncio.sleep(2)
                         continue
                     else:
                         break
@@ -340,17 +331,12 @@ class EternityBot(commands.Bot):
                     log("⚠️ Typing indicator blocked by Discord rate limit (429). Skipped typing status.")
 
 # ==========================================
-# 4. GATEWAY EXECUTION — RUNS FOREVER, NEVER EXITS ON EXHAUSTED RETRIES
+# 4. GATEWAY EXECUTION
 # ==========================================
 async def start_gateway():
     retry_delay = 60
     attempt = 0
 
-    # NOTE: This is now an infinite loop on purpose. The old version used
-    # `for attempt in range(1, 11)`, which meant that after 10 failed
-    # attempts the function returned, the script exited, and Render
-    # auto-restarted the process — firing a brand new IDENTIFY right in
-    # the middle of the existing rate-limit window and extending the ban.
     while True:
         attempt += 1
         log(f"🚀 Initializing Gateway Attempt {attempt} (backoff cap 900s)...")
@@ -359,7 +345,7 @@ async def start_gateway():
         @bot.command(name='ping')
         async def ping(ctx):
             latency = round(bot.latency * 1000)
-            await ctx.send(f"✨ Sparkling! Pong! My cosmic waves reached you in {latency}ms. Ready for action?")
+            await ctx.send(f"✨ Sparkling! Pong! My cosmic waves reached you in {latency}ms. Ready for action!")
 
         @bot.command(name='sync')
         async def sync(ctx, spec: Optional[Literal["clear", "global"]] = None):
@@ -401,7 +387,7 @@ async def start_gateway():
             if e.status == 429:
                 log(f"⚠️ DISCORD 429 RATE LIMIT ENCOUNTERED (Attempt {attempt})! Retrying in {retry_delay}s...")
                 await asyncio.sleep(retry_delay)
-                retry_delay = min(retry_delay * 2, 900)  # cap at 15 min instead of 5
+                retry_delay = min(retry_delay * 2, 900)
             else:
                 log(f"❌ HTTP Error: {e}")
                 await asyncio.sleep(15)
