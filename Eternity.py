@@ -15,7 +15,7 @@ from discord import app_commands
 import google.generativeai as genai
 import motor.motor_asyncio
 
-# 1. Render Secret Files mount path (/etc/secrets) add kar rahe hain
+# 1. Secret Files mount path
 if os.path.exists('/etc/secrets'):
     sys.path.append('/etc/secrets')
 
@@ -47,7 +47,6 @@ def health():
 
 def run_web_server():
     port = int(os.environ.get("PORT", 10000))
-    # Werkzeug logger ko silent kar rahe hain taaki development server warning aur spam na ho
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
@@ -57,13 +56,11 @@ def run_web_server():
 server_thread = Thread(target=run_web_server, daemon=True)
 server_thread.start()
 
-time.sleep(1)
-
 # ==========================================
-# 2. LOAD ENVIRONMENT VARIABLES & CONFIG
+# 2. CONFIGURATION & ENV VARIABLES
 # ==========================================
 DISCORD_TOKEN = os.getenv('ETERNITY_TOKEN') or os.getenv('DISCORD_TOKEN')
-PROXY_URL = os.getenv('DISCORD_PROXY_URL')  # Worker URL environment variable
+PROXY_URL = os.getenv('DISCORD_PROXY_URL')
 MONGO_URI = os.getenv('MONGO_URI')
 OWNER_ID = int(os.getenv('OWNER_ID', 1477528681709830297))
 
@@ -89,10 +86,11 @@ class EternityBot(commands.Bot):
         intents.message_content = True
         intents.members = True
 
-        # Cloudflare Worker Proxy Attach kar rahe hain
         http_options = {}
         if PROXY_URL:
-            http_options["api_base"] = PROXY_URL
+            # Cloudflare Worker Proxy Target Base
+            clean_proxy = PROXY_URL.rstrip('/')
+            http_options["api_base"] = clean_proxy
 
         super().__init__(
             command_prefix='?', 
@@ -316,16 +314,13 @@ class EternityBot(commands.Bot):
                     print("⚠️ Typing indicator blocked by Discord rate limit (429). Skipped typing status.")
 
 # ==========================================
-# 4. ASYNC GATEWAY EXECUTION
+# 4. FIXED GATEWAY EXECUTION WITH PROPER SLEEP
 # ==========================================
 async def start_gateway():
-    max_retries = 10
     retry_delay = 60
 
-    for attempt in range(1, max_retries + 1):
-        print(f"🚀 Initializing Gateway Attempt {attempt}/{max_retries}...")
-        
-        # Har retry par FRESH bot object create hoga
+    for attempt in range(1, 11):
+        print(f"🚀 Initializing Gateway Attempt {attempt}/10...")
         bot = EternityBot()
 
         @bot.command(name='ping')
@@ -370,15 +365,15 @@ async def start_gateway():
             break
         except discord.errors.HTTPException as e:
             if e.status == 429:
-                print(f"⚠️ DISCORD 429 RATE LIMIT ENCOUNTERED (Attempt {attempt}/{max_retries})! Retrying in {retry_delay}s...")
-                await asyncio.sleep(retry_delay)
+                print(f"⚠️ DISCORD 429 RATE LIMIT ENCOUNTERED (Attempt {attempt}/10)! Retrying in {retry_delay}s...")
+                await asyncio.sleep(retry_delay)  # Properly awaiting the delay now
                 retry_delay = min(retry_delay * 2, 300)
             else:
                 print(f"❌ HTTP Error: {e}")
-                sys.exit(1)
+                await asyncio.sleep(15)
         except Exception as e:
             print(f"❌ Connection Error: {e}")
-            await asyncio.sleep(10)
+            await asyncio.sleep(15)
 
 if __name__ == "__main__":
     asyncio.run(start_gateway())
