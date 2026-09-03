@@ -39,10 +39,19 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Eternity is online, glowing, and protecting the faction 24/7!"
+    return "Eternity status: Active", 200
+
+@app.route('/health')
+def health():
+    return "OK", 200
 
 def run_web_server():
     port = int(os.environ.get("PORT", 10000))
+    # Werkzeug logger ko silent kar rahe hain taaki development server warning aur spam na ho
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 server_thread = Thread(target=run_web_server, daemon=True)
@@ -205,7 +214,7 @@ class EternityBot(commands.Bot):
 
     async def on_ready(self):
         print(f'✨ {self.user.name} is fully online and active!')
-        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over Eternal"))
+        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over ETERNAL"))
 
     async def on_message(self, message):
         if message.author.bot or message.mention_everyone:
