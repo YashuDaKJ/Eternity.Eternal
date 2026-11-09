@@ -261,7 +261,7 @@ class EternityBot(commands.Bot):
 
     async def on_ready(self):
         log(f'✨ {self.user.name} is fully online and active!')
-        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over ETERNAL"))
+        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over Eternal"))
 
     # ---------- Message handling ----------
     async def on_message(self, message):
