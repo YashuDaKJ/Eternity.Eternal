@@ -8,7 +8,7 @@ class HelpDropdown(discord.ui.Select):
         options = [
             discord.SelectOption(label="Core Utilities", description="AI, info and status commands", emoji="🌌"),
             discord.SelectOption(label="Moderation Vectors", description="Commands for faction order", emoji="🛡️"),
-            discord.SelectOption(label="Community Features", description="Opt-in safety, tickets and roles", emoji="🎛️"),
+            discord.SelectOption(label="Community Features", description="Opt-in safety, tickets, roles and recovery", emoji="🎛️"),
         ]
         super().__init__(placeholder="Select a module...", min_values=1, max_values=1, options=options)
 
@@ -30,7 +30,8 @@ class HelpDropdown(discord.ui.Select):
             embed.add_field(name="`/feature_toggle` `/feature_status`", value="Administrators can individually enable or disable anti-raid alerts, audit logs, reaction roles and tickets. Features start off.", inline=False)
             embed.add_field(name="`/role_reaction_add`", value="Configure an emoji-to-role mapping on a message.", inline=False)
             embed.add_field(name="`/ticket_open` `/ticket_close`", value="Open and close private support channels.", inline=False)
-            embed.add_field(name="`/review_actions`", value="Report observed logged events for up to 168 hours. It does not bulk-revert changes.", inline=False)
+            embed.add_field(name="`/review_actions`", value="Review recent logged events by time and actor.", inline=False)
+            embed.add_field(name="`/restore_snapshot`", value="Preview, then explicitly restore a deleted role or supported channel from MongoDB. Only server administrators/owner; the configured bot admin ID is denied. Restored items get new IDs.", inline=False)
         await interaction.response.edit_message(embed=embed)
 
 
@@ -70,7 +71,6 @@ class Utilities(commands.Cog):
         except Exception as e:
             print(f"/ask failed: {e}", flush=True)
             return await interaction.followup.send("💠 *The cosmic frequencies are overloaded. Try again shortly!*")
-
         formatted = f"**Input Query:** {question}\n\n✨ **Eternity Output:** {answer}"
         if len(formatted) > 2000:
             await interaction.followup.send(f"**Input Query:** {question}"[:2000])
@@ -86,11 +86,9 @@ class Utilities(commands.Cog):
                      rule: str = "Standard conduct & decorum."):
         if not self._is_authorized(interaction):
             return await interaction.response.send_message("❌ You lack the rights for this command.", ephemeral=True)
-        embed = discord.Embed(
-            title="⚠️ Conduct Reminder",
-            description=f"Attention {target.mention}, please adjust your conduct to keep order.",
-            color=discord.Color.gold(),
-        )
+        embed = discord.Embed(title="⚠️ Conduct Reminder",
+                              description=f"Attention {target.mention}, please adjust your conduct to keep order.",
+                              color=discord.Color.gold())
         embed.add_field(name="Directed To", value=target.mention, inline=True)
         embed.add_field(name="Issued By", value=interaction.user.mention, inline=True)
         embed.add_field(name="Rule", value=rule[:1000], inline=False)
