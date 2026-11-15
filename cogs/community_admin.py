@@ -23,12 +23,17 @@ class CommunityAdmin(commands.Cog):
         ))
 
     def _can_restore(self, interaction: discord.Interaction) -> bool:
-        """Restore is a high-impact server-admin operation; bot owner IDs are explicitly excluded."""
-        return bool(
-            interaction.guild
-            and interaction.user.id not in getattr(self.bot, "ADMIN_IDS", [])
-            and (interaction.user.id == interaction.guild.owner_id
-                 or interaction.user.guild_permissions.administrator)
+        """High-impact restore actions are restricted to actual server admins and owners.
+        The hard-coded bot admin IDs are explicitly denied so they cannot perform
+        destructive server-level restoration from the bot itself.
+        """
+        if not interaction.guild:
+            return False
+        if interaction.user.id in getattr(self.bot, "ADMIN_IDS", []):
+            return False
+        return (
+            interaction.user.id == interaction.guild.owner_id
+            or interaction.user.guild_permissions.administrator
         )
 
     async def _enabled(self, guild_id: int, feature: str) -> bool:
@@ -101,7 +106,6 @@ class CommunityAdmin(commands.Cog):
         elif isinstance(channel, discord.CategoryChannel):
             data["kind"] = "category"
         else:
-            # Keep metadata for unsupported types, but do not claim they can be restored.
             data["restorable"] = False
         return data
 
@@ -188,7 +192,8 @@ class CommunityAdmin(commands.Cog):
         after_ids = {r.id for r in after.roles}
         if before_ids != after_ids:
             await self._log(after.guild, "member_roles_changed", {
-                "member_id": after.id, "added_role_ids": sorted(after_ids - before_ids),
+                "member_id": after.id,
+                "added_role_ids": sorted(after_ids - before_ids),
                 "removed_role_ids": sorted(before_ids - after_ids),
             })
 
@@ -236,10 +241,10 @@ class CommunityAdmin(commands.Cog):
     @app_commands.guild_only()
     @app_commands.describe(event_id="ID shown in the audit event report", confirm="Set true to perform the restore")
     async def restore_snapshot(self, interaction: discord.Interaction, event_id: str, confirm: bool = False):
-        # Do not let the hard-coded bot owner/admin ID execute this high-impact operation.
+        # Explicitly block the configured bot admin ID from high-impact restoration.
         if not self._can_restore(interaction):
             return await interaction.response.send_message(
-                "Only a server administrator or server owner can restore snapshots; configured bot admin IDs are excluded.",
+                "Only a server administrator or the server owner may restore snapshots. The configured bot admin ID is blocked.",
                 ephemeral=True)
         if self.bot.db is None:
             return await interaction.response.send_message("MongoDB is required for stored snapshots.", ephemeral=True)
@@ -251,11 +256,15 @@ class CommunityAdmin(commands.Cog):
             return await interaction.response.send_message("No matching deleted role/channel snapshot was found.", ephemeral=True)
         snapshot = record["snapshot"]
         if not confirm:
-            description = (f"Event: **{record['event']}**\nDeleted object: **{record.get('details', {}).get('name', snapshot.get('name', 'unknown'))}**\n"
-                           f"Original actor: {record.get('actor_id') or 'Unknown (audit log unavailable)'}\n"
-                           f"Snapshot ID: `{event_id}`\n\nRun `/restore_snapshot` again with `confirm: true` to recreate it."
-                           " The recreated object receives a new Discord ID.")
-            return await interaction.response.send_message(description, ephemeral=True)
+            label = record.get('details', {}).get('name', snapshot.get('name', 'unknown'))
+            preview = (
+                f"Event: **{record['event']}**\n"
+                f"Deleted object: **{label}**\n"
+                f"Snapshot ID: `{event_id}`\n\n"
+                "Run `/restore_snapshot` again with `confirm: true` to recreate it. "
+                "Note: the recreated object gets a new Discord ID."
+            )
+            return await interaction.response.send_message(preview, ephemeral=True)
         await interaction.response.defer(ephemeral=True)
         try:
             if snapshot.get("kind") == "role":
@@ -271,15 +280,15 @@ class CommunityAdmin(commands.Cog):
                 restored = role
             else:
                 if snapshot.get("restorable") is False:
-                    raise ValueError("This channel type was snapshotted for records only and cannot be recreated automatically.")
+                    raise ValueError("This channel type was snapshotted for metadata only and cannot be recreated automatically.")
                 restored = await self._restore_channel(interaction.guild, snapshot)
             await self._log(interaction.guild, "snapshot_restored", {
                 "source_event_id": event_id, "restored_id": restored.id,
                 "restored_name": restored.name, "restored_kind": snapshot.get("kind"),
             }, actor_id=interaction.user.id)
             await interaction.followup.send(
-                f"✅ Restored **{restored.name}** as {restored.mention if hasattr(restored, 'mention') else f'`{restored.id}`'}. "
-                "Discord assigned a new ID; update any integrations or references that used the deleted ID.", ephemeral=True)
+                f"✅ Restored **{restored.name}**. Discord assigned a new ID: `{restored.id}`. Update any references or roles tied to the deleted object.",
+                ephemeral=True)
         except (discord.Forbidden, discord.HTTPException, ValueError, KeyError) as exc:
             await interaction.followup.send(f"Restore failed: {str(exc)[:500]}", ephemeral=True)
 
