@@ -8,6 +8,7 @@ class HelpDropdown(discord.ui.Select):
         options = [
             discord.SelectOption(label="Core Utilities", description="AI, info and status commands", emoji="🌌"),
             discord.SelectOption(label="Moderation Vectors", description="Commands for faction order", emoji="🛡️"),
+            discord.SelectOption(label="Community Features", description="Opt-in safety, tickets and roles", emoji="🎛️"),
         ]
         super().__init__(placeholder="Select a module...", min_values=1, max_values=1, options=options)
 
@@ -15,19 +16,21 @@ class HelpDropdown(discord.ui.Select):
         if self.values[0] == "Core Utilities":
             embed = discord.Embed(title="🌌 Core Utilities", color=discord.Color.from_rgb(0, 191, 255))
             embed.add_field(name="`/ask`", value="Ask the AI anything.", inline=False)
-            embed.add_field(name="`/userinfo`", value="Details about a member.", inline=False)
-            embed.add_field(name="`/avatar`", value="Fetch a member's avatar.", inline=False)
-            embed.add_field(name="`/afk`", value="Set your away status (removed when you talk).", inline=False)
-            embed.add_field(name="`/report`", value="Report a member to the moderators.", inline=False)
-        else:
+            embed.add_field(name="`/userinfo` `/avatar`", value="Member details and avatar.", inline=False)
+            embed.add_field(name="`/afk` `/report`", value="Away status and member reports.", inline=False)
+        elif self.values[0] == "Moderation Vectors":
             embed = discord.Embed(title="🛡️ Moderation", color=discord.Color.red())
-            embed.add_field(name="`/warn` `/warnings`", value="Warn a member / view their warning history.", inline=False)
-            embed.add_field(name="`/timeout` `/unmute`", value="Mute a member / lift the mute.", inline=False)
-            embed.add_field(name="`/kick` `/ban` `/unban`", value="Remove or restore members.", inline=False)
-            embed.add_field(name="`/clear`", value="Delete recent messages.", inline=False)
-            embed.add_field(name="`/behave`", value="Send a conduct reminder.", inline=False)
-            embed.add_field(name="`/add_log` `/search_logs` `/browse_categories`", value="Records database.", inline=False)
-            embed.add_field(name="`/setlogchannel`", value="Admin: choose where logs and reports go.", inline=False)
+            embed.add_field(name="`/warn` `/warnings`", value="Warn a member / view warning history.", inline=False)
+            embed.add_field(name="`/timeout` `/untimeout`", value="Timeout or remove a timeout.", inline=False)
+            embed.add_field(name="`/kick` `/ban` `/unban` `/unkick`", value="Moderation and rejoin tools. `/unkick` sends an invite; it cannot reverse a kick.", inline=False)
+            embed.add_field(name="`/clear` `/add_log` `/search_logs`", value="Message cleanup and database records.", inline=False)
+            embed.add_field(name="`/setlogchannel`", value="Choose where moderation logs are posted.", inline=False)
+        else:
+            embed = discord.Embed(title="🎛️ Community Features", color=discord.Color.teal())
+            embed.add_field(name="`/feature_toggle` `/feature_status`", value="Administrators can individually enable or disable anti-raid alerts, audit logs, reaction roles and tickets. Features start off.", inline=False)
+            embed.add_field(name="`/role_reaction_add`", value="Configure an emoji-to-role mapping on a message.", inline=False)
+            embed.add_field(name="`/ticket_open` `/ticket_close`", value="Open and close private support channels.", inline=False)
+            embed.add_field(name="`/review_actions`", value="Report observed logged events for up to 168 hours. It does not bulk-revert changes.", inline=False)
         await interaction.response.edit_message(embed=embed)
 
 
