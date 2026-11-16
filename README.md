@@ -23,9 +23,6 @@ Restoration is not a true rollback: Discord gives recreated roles/channels new I
 
 Moderation commands save cases to MongoDB with UTC timestamps, actor, target, reason, and case ID. `/unban` restores access for a banned user; `/untimeout` removes an active timeout. A kick cannot literally be undone: `/unkick` sends the user a one-use invite that expires after 24 hours, if the bot can DM them.
 
-## MongoDB setup
-
-Set `MONGO_URI` to a MongoDB connection string. The bot uses database `eternal_faction_db` and collections including `moderation_logs`, `counters`, `guild_settings`, `audit_events`, and `role_reactions`. Restrict the database user to this database, store credentials in your host's secret manager, and never commit secrets. Persistent feature settings, logs, and snapshots require MongoDB.
 
 Enable the Discord **Server Members Intent** and existing **Message Content Intent** in the developer portal. Grant only the permissions needed: Manage Channels for tickets/restoring channels, Manage Roles for reaction roles/role restore, and View Audit Log for action attribution. Keep the bot's role above roles it must manage.
 
