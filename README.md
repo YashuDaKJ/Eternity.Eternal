@@ -1,71 +1,42 @@
-<p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1492172037500698758/1528034472929395029/Eternity_.png?ex=6a5cd47f&is=6a5b82ff&hm=d38264d04144342cb643c85d9cc11d3102dd49340724dda0e68fdc657b5a369f&" alt="Eternity Logo" width="180"/>
-</p>
+# 🌌 Eternity — Discord moderation and community bot
 
-# 🌌 Eternity — Advanced Faction Security & Moderation Core
+Eternity is a modular `discord.py` bot with moderation commands, MongoDB-backed cases, AI responses, and optional community tools. Optional tools are **off by default** and configured per server.
 
-**Eternity** is an enterprise-grade automated security, intelligence, and moderation infrastructure engineered specifically to protect and govern the **Eternal** faction ecosystem. Built on robust asynchronous Python architectures, Eternity fuses deterministic moderation protocols with deep contextual intelligence powered by Google’s **Gemini 2.5 Flash** API and high-performance MongoDB persistent storage.
+## Optional community features
 
-The system relies on a dynamic, modular Cogs framework (`moderation.py`, `utilities.py`, `reactions.py`) to guarantee low-latency execution, structural isolation, and 24/7 autonomous uptime.
+Use `/feature_toggle` to turn on one feature and `/feature_status` to inspect settings:
 
----
+- **Anti-raid alerts**: records join bursts of at least five joins in 60 seconds; it does not automatically ban or kick members.
+- **Audit logs and recovery snapshots**: records observed member, role, channel, and message-delete metadata. Deleted roles and supported text/voice/category channels get a MongoDB snapshot. `/review_actions` shows event IDs. `/restore_snapshot` first previews a snapshot, then recreates it only when explicitly invoked again with `confirm: true`.
+- **Reaction roles**: enable and use `/role_reaction_add` in the channel with the message ID, emoji, and role.
+- **Tickets**: enable, then use `/ticket_open`; staff or the opener can use `/ticket_close`.
 
-## 🛠️ Architectural Overview
+### Snapshot and restore limitations
 
-* **Modular Cogs Design:** Decoupled functional logic maintaining a clean, scalable event loop across utility, enforcement, and reaction matrices.
-* **Contextual Neural Intelligence:** Leverages Gemini 2.5 Flash for dynamic conversation handling, policy interpretation, and automated threat reasoning.
-* **Persistent Database Integration:** MongoDB back-end support for structured moderation logging, case tracking, and general faction record-keeping.
-* **Native Vision & Media Processing:** Direct ingestion and scanning of image assets and multimedia attachments within active operational channels.
-* **Interactive UI Elements:** Features fully interactive Discord Dropdown Menus (`discord.ui.Select`) for streamlined command navigation and record browsing.
-* **Optimized Command Trees:** Synchronized dual-interface supporting modern Discord Application Slash Commands (`/`) alongside fallback administrative prefixes (`?`). Features built-in duplicate-clearing technology (`?sync clear`).
-* **Continuous Uptime Framework:** Embedded lightweight Flask web server integrated with a background heartbeat thread to maintain 24/7 container liveness on cloud hosting environments.
+The restore command is a high-impact operation and is restricted to server administrators/server owner; the hard-coded bot `ADMIN_IDS` are explicitly denied. A restore requires the audit feature to have been enabled at deletion time, MongoDB availability, and the bot to have the needed permissions. For best-effort attribution, grant **View Audit Log**. If Discord audit entries are unavailable, the actor is recorded as unknown.
 
----
+Restoration is not a true rollback: Discord gives recreated roles/channels new IDs. Role/channel references elsewhere must be updated. Channel permission overwrites referring to deleted roles or departed members cannot be recreated and are skipped. Category placement and role position are approximate. Only roles and text, voice, and category channels are automatically restorable; other types are logged as metadata only. Deleted messages and message history are not restored. Review the preview before confirming, and never rely on snapshots as the only backup.
 
-## 🛡️ Operational Command Matrix
+`/review_actions` reports up to 50 recorded events for up to 168 hours, optionally filtered by actor. It is report-only and does not bulk-revert arbitrary events.
 
-Operations are primarily executed via secure Discord Slash Commands (`/`), backed by administrative control utilities.
+## Moderation history
 
-### ⚙️ Core Utilities & Player Networking
-| Command | Parameters | Description |
-| :--- | :--- | :--- |
-| `/help` | None | Deploys an interactive UI interface detailing active operational parameters. |
-| `/ask` | `question` | Queries the core neural model for direct strategic response or intelligence. |
-| `/userinfo` | `[target]` | Extracts and displays the digital footprint and role hierarchy of a node. |
-| `/avatar` | `[target]` | Fetches the high-resolution profile imagery of a target entity. |
-| `/afk` | `[reason]` | Registers the user's status as Away From Keyboard on the network. |
-| `/report` | `target`, `reason` | Submits a formal, logged player violation report to the administration. |
-| `?ping` | None | Evaluates real-time gateway latency between the framework and Discord clusters. |
+Moderation commands save cases to MongoDB with UTC timestamps, actor, target, reason, and case ID. `/unban` restores access for a banned user; `/untimeout` removes an active timeout. A kick cannot literally be undone: `/unkick` sends the user a one-use invite that expires after 24 hours, if the bot can DM them.
 
-### 🚨 Administrative, Moderation & Database Protocols
-| Command | Parameters | Auth Level | Description |
-| :--- | :--- | :--- | :--- |
-| `/add_log` | `topic`, `reason`, `[target]` | Moderator+ | Creates a persistent database entry/log for general notes or a target user. |
-| `/browse_categories` | None | Moderator+ | Launches an interactive dropdown UI to browse stored topics and logs. |
-| `/search_logs` | `topic`, `[target]`, `[is_public]` | Moderator+ | Queries database records with optional user filtering and visibility toggles. |
-| `/warn` | `target`, `reason` | Moderator+ | Issues a formal structural violation warning to a designated member. |
-| `/timeout`| `target`, `minutes`, `reason` | Moderator+ | Enforces temporary communication suppression (Mute) on an element. |
-| `/clear` | `amount` | Moderator+ | Purges specified message frames from the active channel buffer (1–100). |
-| `/kick` | `target`, `reason` | Moderator+ | Evicts a non-compliant element from the server environment. |
-| `/ban` | `target`, `reason` | Administrator | Permanently revokes network and server access for a high-risk entity. |
-| `/unban` | `user_id`, `reason` | Administrator | Restores access authorization to a previously archived Snowflake ID. |
-| `/behave` | `target`, `rule` | Administrator | Directs explicit behavioral compliance protocol toward an individual. |
-| `/copy` | `message_input`, `[reply_text]`, `[target_channel]` | Administrator | Covertly broadcasts text or clones existing channel messages anonymously. |
-| `?sync` | `[clear]` | Administrator | Reconciles and synchronizes application command trees globally. |
+## MongoDB setup
 
----
+Set `MONGO_URI` to a MongoDB connection string. The bot uses database `eternal_faction_db` and collections including `moderation_logs`, `counters`, `guild_settings`, `audit_events`, and `role_reactions`. Restrict the database user to this database, store credentials in your host's secret manager, and never commit secrets. Persistent feature settings, logs, and snapshots require MongoDB.
 
-## ⚡ Deployment & Resource Specifications
+Enable the Discord **Server Members Intent** and existing **Message Content Intent** in the developer portal. Grant only the permissions needed: Manage Channels for tickets/restoring channels, Manage Roles for reaction roles/role restore, and View Audit Log for action attribution. Keep the bot's role above roles it must manage.
 
-Eternity is optimized for ultra-lean cloud execution, guaranteeing high efficiency with minimal resource consumption.
+## Rate limits and memory
 
-### Minimum System Footprint
-| Resource Metric | Specification |
-| :--- | :--- |
-| **CPU Allocation** | 0.1 vCPU (Shared) / 0.5 vCPU Recommended |
-| **Memory (RAM)** | 256 MB (512 MB Recommended) |
-| **Storage** | 100 MB Operational Footprint |
-| **Runtime Environment**| Python 3.11+ (Asynchronous Event Loop) |
+Anti-raid uses a small rolling 60-second in-memory join window. There are no polling jobs. The bot does not mass-ban users or attempt to evade Discord rate limits; do not loop bulk restore actions. Discord can still return HTTP 429, so operations should be performed individually and retried only after the indicated delay.
 
+## Run and synchronize commands
 
-💠Protecting Eternal from a long time💠
+Install dependencies from `requirements.txt`; configure `ETERNITY_TOKEN` (or `DISCORD_TOKEN`), `GEMINI_API_KEY`, and optionally `MONGO_URI`; then run `python Eternity.py`. Use owner-only `?sync` to publish slash commands.
+
+## Resource use
+
+The optional features are event/command-driven and use bounded in-memory state, intended for a 512 MB host. Actual memory depends on the existing Python, Discord, and AI dependencies and workload.
